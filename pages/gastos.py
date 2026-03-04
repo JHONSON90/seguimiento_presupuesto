@@ -5,6 +5,11 @@ import time
 import traceback
 import pandas as pd
 
+st.set_page_config(
+    page_title="Gastos Generales",
+    page_icon="💰",
+    layout="wide"
+)
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -56,7 +61,7 @@ def agregar_consumo():
         time.sleep(2)
         st.rerun()
     
-if st.button("Agregar Gasto"):
+if st.button("➕ Agregar Gasto"):
     agregar_consumo()
 
 st.markdown("# Gastos")

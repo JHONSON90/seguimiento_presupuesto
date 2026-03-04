@@ -3,6 +3,11 @@ from streamlit_gsheets import GSheetsConnection
 import time
 import traceback
 
+st.set_page_config(
+    page_title="Activos Fijos",
+    page_icon="💻",
+    layout="wide"
+)
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -29,10 +34,11 @@ st.markdown("# Activos Fijos")
 
 st.markdown("🔎 Filtros")
 
+filtro1, filtro2, filtro3 = st.columns(3)
 # Use st.session_state.df for options to ensure they are always available
-responsable = st.multiselect("Centro de costos", options=st.session_state.df['AREA'].unique(), key="responsable")
-activo_fijo = st.multiselect("Activo fijo", options=st.session_state.df['EQUIPO / ITEM'].unique(), key="activo_fijo")
-prioridad = st.multiselect("Prioridad", options=st.session_state.df['PRIORIZACION'].unique(), key="prioridad")
+responsable = filtro1.multiselect("Centro de costos", options=st.session_state.df['AREA'].unique(), key="responsable")
+activo_fijo = filtro2.multiselect("Activo fijo", options=st.session_state.df['EQUIPO / ITEM'].unique(), key="activo_fijo")
+prioridad = filtro3.multiselect("Prioridad", options=st.session_state.df['PRIORIZACION'].unique(), key="prioridad")
 
 # Create a filtered copy for display, keeping the original intact in session_state
 filtered_df = st.session_state.df.copy()
@@ -46,7 +52,7 @@ if prioridad:
 
 if not filtered_df.empty:
     with st.form("editor_activos"):
-        st.subheader("📝 Editor de Datos")
+        st.markdown("📝 Seguimiento de Activos Fijos")
         # Capture edited dataframe
         edited_df = st.data_editor(
             filtered_df, 
@@ -90,6 +96,6 @@ with col2:
         del st.session_state.df
         st.rerun()
 
-st.info("💡 **Instrucciones:** 1. Realiza todos los cambios en la tabla. \n **2.** Presiona 'Aplicar cambios locales'. \n **3.** Finalmente presiona 'Guardar TODO en Google Sheets'.")
+st.info("💡 **Instrucciones:** 1. Realiza todos los cambios en la tabla. \n **2.** Presiona 'Aplicar cambios locales'. \n **3.** Finalmente presiona 'Guardar TODO'.")
 
 

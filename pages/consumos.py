@@ -5,6 +5,11 @@ import traceback
 import pandas as pd
 import polars as pl
 
+st.set_page_config(
+    page_title="Consumos por Bodega",
+    page_icon="🔥",
+    layout="wide"
+)
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -53,10 +58,10 @@ def agregar_consumo():
         time.sleep(2)
         st.rerun()
 
-if st.button("Agregar Consumo"):
+if st.button("➕ Agregar Consumo"):
     agregar_consumo()
 
-st.markdown("# Consumos por bodega")
+st.markdown("# Consumos autorizados por bodega")
 
 df2['Fecha'] = pd.to_datetime(df2['Fecha'])
 df2['Mes'] = df2['Fecha'].dt.month_name()
@@ -70,6 +75,15 @@ seguimiento = df2.pivot_table(
 ppto_consumos = df.join(seguimiento, on='Rubro Presupuestal', how='left').fillna(0)
 # ppto_consumos[]
 
-st.write(df)
-
 st.write(ppto_consumos)
+
+data1, data2, data3, data4 = st.columns(4)
+
+with data1:
+    st.metric("Total", f"${ppto_consumos['Valor Año'].sum():,.0f}")
+with data2:
+    st.metric("Total Mensual", f"${ppto_consumos['Valor Mensual'].sum():,.0f}")
+with data3:
+    st.metric("Total Autorizado", f"${df2['Valor'].sum():,.0f}", delta=f"{df2['Rubro Presupuestal'].count()} Solicitudes de compra", delta_color="inverse")
+with data4:
+    st.metric("Saldo Autorizado", f"${ppto_consumos['Valor Año'].sum() - df2['Valor'].sum():,.0f}")
