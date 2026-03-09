@@ -4,6 +4,7 @@ from streamlit_gsheets import GSheetsConnection
 import time
 import traceback
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(
     page_title="Gastos Generales",
@@ -13,32 +14,37 @@ st.set_page_config(
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-try:
-    df = conn.read(worksheet="Gastos Generales", ttl=0)
-    placeholder = st.empty()
-    placeholder.success("Conexión exitosa!!")
-    time.sleep(2)
-    placeholder.empty()
-except Exception as e:
-    placeholder = st.empty()
-    placeholder.error(f"Error al conectar con Google Sheets: {str(e)}")
-    placeholder.error(f"Traceback: {traceback.format_exc()}")
-    time.sleep(2)
-    placeholder.empty()
+@st.cache_data(show_spinner="Cargando datos...")
+def cargar_datos():
+    try:
+        df = conn.read(worksheet="Gastos Generales", ttl=0)
+        placeholder = st.empty()
+        placeholder.success("Conexión exitosa!!")
+        time.sleep(2)
+        placeholder.empty()
+    except Exception as e:
+        placeholder = st.empty()
+        placeholder.error(f"Error al conectar con Google Sheets: {str(e)}")
+        placeholder.error(f"Traceback: {traceback.format_exc()}")
+        time.sleep(2)
+        placeholder.empty()
 
-try:
-    df2 = conn.read(worksheet="Control GG", ttl=0)
-    placeholder = st.empty()
-    placeholder.success("Conexión exitosa!!")
-    time.sleep(2)
-    placeholder.empty()
-except Exception as e:
-    placeholder = st.empty()
-    placeholder.error(f"Error al conectar con Google Sheets: {str(e)}")
-    placeholder.error(f"Traceback: {traceback.format_exc()}")
-    time.sleep(2)
-    placeholder.empty()
+    try:
+        df2 = conn.read(worksheet="Control GG", ttl=0)
+        placeholder = st.empty()
+        placeholder.success("Conexión exitosa!!")
+        time.sleep(2)
+        placeholder.empty()
+    except Exception as e:
+        placeholder = st.empty()
+        placeholder.error(f"Error al conectar con Google Sheets: {str(e)}")
+        placeholder.error(f"Traceback: {traceback.format_exc()}")
+        time.sleep(2)
+        placeholder.empty()
+    
+    return df, df2
 
+df, df2 = cargar_datos()
 
 @st.dialog("🛒 Agregar Gasto")
 def agregar_consumo():
@@ -78,8 +84,88 @@ seguimiento = df2.pivot_table(
 
 ppto_consumos = df.merge(seguimiento, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
 
+ppto_consumos['Valor 2026'] = ppto_consumos['Valor 2026'].astype(int)
+ppto_consumos['Valor mensual'] = ppto_consumos['Valor mensual'].astype(int)
 
-st.dataframe(df)
-st.dataframe(df2)
 
-st.write(ppto_consumos)
+
+col1, col2 = st.columns([0.80, 0.20])
+
+with col1:
+    st.write(ppto_consumos)
+
+with col2:
+    st.metric('Presupuesto Total', f"${ppto_consumos['Valor 2026'].sum():,.0f}")
+    st.metric('Ejecutado Total', f"${df2['Valor'].sum():,.0f}", delta=f"{df2['Valor'].count()} ordenes")
+    st.metric('Saldo Pendiente', f"${ppto_consumos['Valor 2026'].sum() - df2['Valor'].sum():,.0f}")
+    st.metric('% Ejecución', f"{(df2['Valor'].sum() / ppto_consumos['Valor 2026'].sum() * 100):.1f}%")    
+    
+st.markdown("## 📊 Dashboard de Seguimiento")
+
+chart_col1, chart_col2 = st.columns([2, 1])
+
+with chart_col1:
+    st.markdown("#### 🏢 Ejecución por Área")
+    # Prepare data for budget vs executed by Area
+    area_stats = df2.groupby('Centro de costo').agg({
+        'Valor': 'sum',
+    }).reset_index()
+    
+    # Melt for easier plotting with Plotly
+    area_stats_melted = area_stats.melt(id_vars='Centro de costo', value_vars=['Valor'], 
+                                         var_name='Tipo', value_name='Monto')
+    
+    fig_area = px.bar(
+        area_stats_melted, 
+        x='Centro de costo', 
+        y='Monto', 
+        color='Tipo', 
+        barmode='group',
+        title='Presupuesto vs Ejecutado por Área',
+        color_discrete_map={
+            'Valor': '#1f77b4',  # Blue for Budget
+        },
+        labels={'Centro de costo': 'Centro de Costos', 'Monto': 'Monto (COP)'}
+    )
+    st.plotly_chart(fig_area, width='stretch')
+
+with chart_col2:
+    st.markdown("#### 🎯 Rubro Presupuestal")
+    # Prepare data for count by Prioritization
+    prioridad_counts = df2.groupby('Rubro Presupuestal').agg({
+        'Valor': 'sum',
+    }).reset_index()
+    prioridad_counts.columns = ['Rubro Presupuestal', 'Valor']
+    
+    fig_prioridad = px.pie(
+        prioridad_counts, 
+        values='Valor', 
+        names='Rubro Presupuestal',
+        title='Distribución por Rubro Presupuestal',
+        hole=0.3
+    )
+    st.plotly_chart(fig_prioridad, width='stretch')
+
+# Additional Chart: Execution by Type
+st.markdown("#### 📋 Ejecución por Rubro presupuestal")
+# Prepare data for budget vs executed by Type
+type_stats = df2.groupby('Rubro Presupuestal').agg({
+    'Valor': 'sum',
+}).reset_index()
+
+seguimiento_total = df.merge(type_stats, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
+
+fig_type = px.bar(
+    seguimiento_total, 
+    x='Cod Rubro Pptal', 
+    y=['Valor', 'Valor 2026'], 
+    barmode='group',
+    title='Presupuesto vs Valor 2026 por Rubro Presupuestal',
+    color_discrete_map={
+        'Valor': '#1f77b4',
+        'Valor 2026': '#ff7f0e'
+    },
+    labels={'value': 'Monto (COP)', 'variable': 'Tipo', 'Rubro Presupuestal': 'Rubro Presupuestal'}
+)
+st.plotly_chart(fig_type, width='stretch')
+
