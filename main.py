@@ -1,11 +1,9 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import time
-import traceback
-import pandas as pd
-import polars as pl
-import plotly.express as px
-import plotly.graph_objects as go
+from auth_ppto import require_login
+from services.users import get_role
+from services.logging import log_event
+
+
 
 st.set_page_config(
     page_title="Seguimiento de Presupuesto",
@@ -13,27 +11,73 @@ st.set_page_config(
     layout="wide"
 )
 
-conn = st.connection("gsheets", type=GSheetsConnection)
+# st.markdown(
+#     """
+#     <style>
+#         /* Ocultar header principal barra superior de Streamlit */
+#         header {visibility: hidden;}
+#     </style>
+#     """,
+#     unsafe_allow_html=True
+# )
 
-st.markdown("# Seguimiento de Presupuesto")
+require_login()
 
-@st.cache_data(show_spinner="Cargando datos...")
-def cargar_datos():
-    try:
-        df = conn.read(worksheet="Por CC", ttl=0)
-        placeholder = st.empty()
-        placeholder.success("Conexión exitosa!!")
-        time.sleep(2)
-        placeholder.empty()
-    except Exception as e:
-        placeholder = st.empty()
-        placeholder.error(f"Error al conectar con Google Sheets: {str(e)}")
-        placeholder.error(f"Traceback: {traceback.format_exc()}")
-        time.sleep(2)
-        placeholder.empty()
-    
-    return df
+email = st.user.email
+name = st.user.name
+role = get_role()
 
-df = cargar_datos()
+st.sidebar.write(f"Bienvenido {name}")
 
-st.write(df)
+if st.sidebar.button("Cerrar Sesión"):
+    st.logout()
+
+
+#Paginas
+
+activos_fijos = st.Page(
+    'views/activos_fijos.py',
+    title = 'Activos Fijos',
+    icon = '💻'
+)
+
+consumos_bodega = st.Page(
+    'views/consumos.py',
+    title = 'Consumos Bodega',
+    icon = '📦'
+)
+
+gastos = st.Page(
+    'views/gastos.py',
+    title = 'Gastos',
+    icon = '💸'
+)
+
+presupuesto_total = st.Page(
+    'views/ppto_total.py',
+    title = 'Presupuesto',
+    icon = '🧮'
+)
+
+admin = st.Page(
+    'views/admin.py',
+    title = 'Admin',
+    icon = "⚙️"
+)
+
+paginas = [presupuesto_total, activos_fijos, consumos_bodega, gastos]
+
+if role == 'admin':
+    paginas.append(admin)
+
+pg = st.navigation(paginas)
+
+if "current_page" not in st.session_state:
+    st.session_state.current_page = None
+
+if st.session_state.current_page != pg.title:
+    log_event(email, name, "navigate", pg.title)
+    st.session_state.current_page = pg.title
+
+pg.run()
+
