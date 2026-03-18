@@ -7,7 +7,7 @@ from streamlit_gsheets import GSheetsConnection
 def log_event(email, name, event, page):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(worksheet="logs", ttl=0)
+        df = conn.read(worksheet="logs", ttl=60)
         
         timestamp = datetime.datetime.now().isoformat()
         

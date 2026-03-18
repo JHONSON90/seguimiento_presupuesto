@@ -10,7 +10,7 @@ st.markdown("# Seguimiento de Presupuesto")
 @st.cache_data(show_spinner="Cargando datos...")
 def cargar_datos():
     try:
-        df = conn.read(worksheet="Por CC", ttl=0)
+        df = conn.read(worksheet="Por CC", ttl=60)
         placeholder = st.empty()
         placeholder.success("Conexión exitosa!!")
         time.sleep(2)

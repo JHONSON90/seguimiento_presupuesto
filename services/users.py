@@ -5,7 +5,7 @@ from streamlit_gsheets import GSheetsConnection
 def get_users_dict():
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(worksheet="Users_data", ttl=0)
+        df = conn.read(worksheet="Users_data", ttl=60)
         
         # Normalizar los nombres de columnas
         cols = [str(c).lower().strip() for c in df.columns]

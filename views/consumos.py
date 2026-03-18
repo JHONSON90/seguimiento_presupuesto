@@ -18,7 +18,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 @st.cache_data(show_spinner="Cargando datos...")
 def cargar_datos():
     try:
-        df = conn.read(worksheet="Consumos", ttl=0)
+        df = conn.read(worksheet="Consumos", ttl=60)
         placeholder = st.empty()
         placeholder.success("Conexión exitosa!!")
         time.sleep(2)
@@ -31,7 +31,7 @@ def cargar_datos():
         placeholder.empty()
 
     try:
-        df2 = conn.read(worksheet="Control Consumos", ttl=0)
+        df2 = conn.read(worksheet="Control Consumos", ttl=60)
         placeholder = st.empty()
         placeholder.success("Conexión exitosa!!")
         time.sleep(2)
@@ -44,7 +44,7 @@ def cargar_datos():
         placeholder.empty()
 
     try:
-        df3 = conn.read(worksheet="Control Compras", ttl=0)
+        df3 = conn.read(worksheet="Control Compras", ttl=60)
         placeholder = st.empty()
         placeholder.success("Conexión exitosa!!")
         time.sleep(2)
@@ -66,7 +66,7 @@ def agregar_consumo():
     Rubro_Presupuestal_form = st.selectbox("🏠 Bodega", ['60101 - Laboratorio Clinico',   '60102 - Mantenimiento', '60103 - Osteosintesis', '60104 - Servicio Farmaceutico', '60105 - Sistemas', '60106 - Suministros'])
     Valor_form = st.number_input("💰 Valor", min_value=0.0, format="%.2f")
     if st.button('Agregar Consumo'):
-        df2 = conn.read(worksheet="Control Consumos", ttl=0)
+        df2 = conn.read(worksheet="Control Consumos", ttl=60)
         new_row = pd.DataFrame({
             'Fecha':[Fecha_formulario],
             "Rubro Presupuestal":[Rubro_Presupuestal_form],

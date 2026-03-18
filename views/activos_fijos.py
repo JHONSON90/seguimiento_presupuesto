@@ -16,7 +16,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 if 'df' not in st.session_state:
     try:
         # Initial read only happens once
-        df = conn.read(worksheet="Activos Fijos", ttl=0)
+        df = conn.read(worksheet="Activos Fijos", ttl=60)
         
         # Data preparation
         df['VALOR TOTAL'] = pd.to_numeric(df['VALOR TOTAL'], errors='coerce').fillna(0)
