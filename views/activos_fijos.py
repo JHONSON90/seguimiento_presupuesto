@@ -68,7 +68,7 @@ if not filtered_df.empty:
                 'Valor Comprado': st.column_config.Column("Valor Comprado", help="Indica el valor del activo fijo comprado"),
             },
             num_rows='dynamic', 
-            disabled=["AREA", 'CODIGO RUBRO PRESUPUESTAL', 'EQUIPO / ITEM','CANTIDAD','VALOR UNITARIO','VALOR TOTAL','PRIORIZACION'],  
+            #disabled=["AREA", 'CODIGO RUBRO PRESUPUESTAL', 'EQUIPO / ITEM','CANTIDAD','VALOR UNITARIO','VALOR TOTAL','PRIORIZACION'],  
             width='stretch',
             hide_index=True)
         

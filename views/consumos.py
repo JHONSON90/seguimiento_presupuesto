@@ -60,7 +60,7 @@ def cargar_datos():
 
 df, df2, df3 = cargar_datos()
 
-@st.dialog("🛒 Agregar Consumo")
+@st.dialog("Agregar Consumo")
 def agregar_consumo():
     Fecha_formulario = st.date_input("🗓️ Fecha de la Compra")
     Rubro_Presupuestal_form = st.selectbox("🏠 Bodega", ['60101 - Laboratorio Clinico',   '60102 - Mantenimiento', '60103 - Osteosintesis', '60104 - Servicio Farmaceutico', '60105 - Sistemas', '60106 - Suministros'])
@@ -79,7 +79,7 @@ def agregar_consumo():
         time.sleep(2)
         st.rerun()
 
-@st.dialog("📋 Listado de solicitudes de compra")
+@st.dialog("📋 Solicitudes de compra", width="medium")
 def listado_solicitudes():
     st.write(df2)
 
@@ -88,7 +88,7 @@ with col1:
     if st.button("➕ Agregar Consumo"):
         agregar_consumo()
 with col2:
-    if st.button("Listado de solicitudes de compra"):
+    if st.button("📋 Listado de solicitudes de compra"):
         listado_solicitudes()
 
 st.markdown("# Consumos autorizados por bodega")

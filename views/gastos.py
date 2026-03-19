@@ -60,7 +60,7 @@ def cargar_datos():
 
 df, df2, df3 = cargar_datos()
 
-@st.dialog("🛒 Agregar Gasto")
+@st.dialog("Agregar Gasto")
 def agregar_consumo():
     Fecha_formulario = st.date_input("🗓️ Fecha de la Compra")
     Rubro_Presupuestal_form = st.selectbox("🏷️ Rubro Presupuestal", ['50101 - GASTOS DE PERSONAL','50102 - CAPACITACIONES','50103 - PLAN DE BIENESTAR','50104 - HONORARIOS','50105 - IMPUESTOS','50106 - ARRENDAMIENTOS','50107 - AFILIACIONES Y CONTRIBUCIONES','50108 - SEGUROS','50109 - SERVICIOS','50110 - GASTOS LEGALES','50111 - MANTENIMIENTO Y REPARACIONES','50112 - DEPRECIACION','50113 - AMORTIZACIONES','50114 - OTROS GASTOS','50115 - DETERIORO','50116 - GASTOS FINANCIEROS','50117 - AJUSTES AL INVENTARIO','50118 - GASTOS JURIDICOS','50119 - GASTOS DIVERSOS','50120 - MATERIALES Y SUMINISTROS','50121 - GASTOS DE VIAJE'])
@@ -80,9 +80,19 @@ def agregar_consumo():
         st.success("Gasto agregado exitosamente!!")
         time.sleep(2)
         st.rerun()
-    
-if st.button("➕ Agregar Gasto"):
-    agregar_consumo()
+
+
+@st.dialog("📋 Solicitudes de compra", width="medium")
+def listado_solicitudes():
+    st.write(df2)
+
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("➕ Agregar Gasto"):
+        agregar_consumo()
+with col2:
+    if st.button("📋 Solicitudes de compra"):
+        listado_solicitudes()
 
 st.markdown("# Gastos")
 
@@ -96,7 +106,21 @@ seguimiento = df2.pivot_table(
     aggfunc='sum'
 )
 
-ppto_consumos = df.merge(seguimiento, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
+df3['Fecha'] = pd.to_datetime(df3['Fecha'])
+df3['Mes'] = df3['Fecha'].dt.month_name()
+df3['SALDO MOV.'] = df3['SALDO MOV.'].astype(int)
+
+real_ejecutado = df3.pivot_table(
+    index='Cod Rubro Pptal',
+    columns='Mes',
+    values='SALDO MOV.',
+    aggfunc='sum'
+)
+
+ppto_consumos = df.merge(real_ejecutado, on='Cod Rubro Pptal', how='left').fillna(0)
+
+#TODO: colocar un estado en el control gg para que aqui me muestre solo los dos ultimos meses y meses anteriores colocar lo real ejecutado
+ppto_consumos = ppto_consumos.merge(seguimiento, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
 
 ppto_consumos['Valor 2026'] = ppto_consumos['Valor 2026'].astype(int)
 ppto_consumos['Valor mensual'] = ppto_consumos['Valor mensual'].astype(int)
@@ -108,9 +132,9 @@ with col1:
 
 with col2:
     st.metric('Presupuesto Total', f"${ppto_consumos['Valor 2026'].sum():,.0f}")
-    st.metric('Ejecutado Total', f"${df2['Valor'].sum():,.0f}", delta=f"{df2['Valor'].count()} ordenes")
-    st.metric('Saldo Pendiente', f"${ppto_consumos['Valor 2026'].sum() - df2['Valor'].sum():,.0f}")
-    st.metric('% Ejecución', f"{(df2['Valor'].sum() / ppto_consumos['Valor 2026'].sum() * 100):.1f}%")    
+    st.metric('Ejecutado Total', f"${(df2['Valor'].sum() + df3['SALDO MOV.'].sum()):,.0f}", delta=f"{df2['Valor'].count()} ordenes")
+    st.metric('Saldo Pendiente', f"${(ppto_consumos['Valor 2026'].sum() - (df2['Valor'].sum() + df3['SALDO MOV.'].sum())):,.0f}")
+    st.metric('% Ejecución', f"{(df2['Valor'].sum() + df3['SALDO MOV.'].sum()) / ppto_consumos['Valor 2026'].sum() * 100:.1f}%")    
     
 st.markdown("## 📊 Dashboard de Seguimiento")
 
@@ -144,10 +168,19 @@ with chart_col1:
 with chart_col2:
     st.markdown("#### 🎯 Rubro Presupuestal")
     # Prepare data for count by Prioritization
-    prioridad_counts = df2.groupby('Rubro Presupuestal').agg({
+    #TODO: colocar un estado en el control gg para que aqui me muestre solo los dos ultimos meses y meses anteriores colocar lo real ejecutado y poderlos comparar
+    proyectado = df2.groupby('Rubro Presupuestal').agg({
         'Valor': 'sum',
     }).reset_index()
-    prioridad_counts.columns = ['Rubro Presupuestal', 'Valor']
+    proyectado.columns = ['Rubro Presupuestal', 'Valor']
+
+    real = df3.groupby('Cod Rubro Pptal').agg({
+        'SALDO MOV.': 'sum',
+    }).reset_index()
+    real.columns = ['Rubro Presupuestal', 'Valor']
+
+    
+    prioridad_counts = pd.concat([proyectado, real], ignore_index=True)
     
     fig_prioridad = px.pie(
         prioridad_counts, 
@@ -161,11 +194,9 @@ with chart_col2:
 # Additional Chart: Execution by Type
 st.markdown("#### 📋 Ejecución por Rubro presupuestal")
 # Prepare data for budget vs executed by Type
-type_stats = df2.groupby('Rubro Presupuestal').agg({
-    'Valor': 'sum',
-}).reset_index()
 
-seguimiento_total = df.merge(type_stats, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
+
+seguimiento_total = df.merge(prioridad_counts, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
 
 fig_type = px.bar(
     seguimiento_total, 

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
-st.markdown("# Gestión de Usuarios")
+st.markdown("# Gestión de la aplicación")
 st.markdown("Administra los accesos, roles, adicion de informacion en la app.")
 
 try:
@@ -92,6 +92,7 @@ with st.expander("➕ Agregar libro diario a la app"):
                         
                         #Leer la base de datos SOLO al momento de guardar para ahorrar peticiones
                         df_libros = conn.read(worksheet="Gastos_Grales_reales", ttl=60)
+                        #TODO: HACER FUNCION PARA LEER EL ARCHIVO CONTROL GG Y CAMBIAR EL ESTADO DE LOS REGISTROS REALIZADOS EN EL MES QUE SE ESTA SUBIENDO EL INFORME PARA QUE PASE A SER REAL Y NO PROYECTADO Y QUE ESTOS NO SE MIREN REFLEJADOS EN LOS INFORMES
                         
                         df_libros = pd.concat([df_libros, agrupado], ignore_index=True)
                         conn.update(worksheet="Gastos_Grales_reales", data=df_libros)
