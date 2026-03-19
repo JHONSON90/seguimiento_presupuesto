@@ -64,13 +64,28 @@ if not filtered_df.empty:
         edited_df = st.data_editor(
             filtered_df, 
             column_config={
-                'AREA': st.column_config.Column("Centro de costo", help="Indica el centro de costo"),
-                'CODIGO RUBRO PRESUPUESTAL': st.column_config.Column("Rubro Presupuestal", help="Indica el rubro presupuestal"),
+                'AREA': st.column_config.SelectboxColumn(
+                    "Centro de costo", 
+                    help="Indica el centro de costo",
+                    options=sorted(st.session_state.df['AREA'].unique().tolist()),
+                    required=True
+                ),
+                'CODIGO RUBRO PRESUPUESTAL': st.column_config.SelectboxColumn(
+                    "Rubro Presupuestal", 
+                    help="Indica el rubro presupuestal",
+                    options=sorted(st.session_state.df['CODIGO RUBRO PRESUPUESTAL'].unique().tolist()),
+                    required=True
+                ),
                 'EQUIPO / ITEM': st.column_config.Column("Activo fijo", help="Indica el activo fijo"),
                 'CANTIDAD': st.column_config.Column("Cantidad", help="Indica la cantidad del activo fijo"),
                 'VALOR UNITARIO': st.column_config.Column("Valor unitario", help="Indica el valor unitario del activo fijo"),
                 'VALOR TOTAL': st.column_config.Column("Valor total", help="Indica el valor total del activo fijo"),
-                'PRIORIZACION': st.column_config.Column("Prioridad", help="Indica la prioridad del activo fijo"),
+                'PRIORIZACION': st.column_config.SelectboxColumn(
+                    "Prioridad", 
+                    help="Indica la prioridad del activo fijo",
+                    options=sorted([opt for opt in st.session_state.df['PRIORIZACION'].unique().tolist() if pd.notna(opt) and opt != '']) + ["Nuevo"],
+                    required=True
+                ),
                 'Solicitud Pedido': st.column_config.CheckboxColumn('Solicitud Pedido', help="Indica si se ha recibido la solicitud del pedido", default=False),
                 'Cotizado': st.column_config.CheckboxColumn('Cotizado', help="Indica si se ha realizado la cotización", default=False),
                 'Aprobado': st.column_config.CheckboxColumn('Aprobado', help="Indica si se ha aprobado la cotización", default=False),
@@ -106,6 +121,12 @@ if not filtered_df.empty:
                 for col in ['Solicitud Pedido', 'Cotizado', 'Aprobado', 'Comprado']:
                     if col in new_df.columns:
                         new_df[col] = new_df[col].fillna(False).astype(bool)
+                
+                # Manejar valores vacíos en strings para evitar NaN en GSheets
+                new_df['PRIORIZACION'] = new_df['PRIORIZACION'].fillna('Nuevo').replace('', 'Nuevo')
+                new_df['AREA'] = new_df['AREA'].fillna('').astype(str)
+                new_df['EQUIPO / ITEM'] = new_df['EQUIPO / ITEM'].fillna('').astype(str)
+                
             except Exception as e:
                 st.error(f"Error al procesar tipos de datos: {str(e)}")
             
