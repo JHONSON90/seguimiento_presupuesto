@@ -19,6 +19,9 @@ if 'df' not in st.session_state:
         df = conn.read(worksheet="Activos Fijos", ttl=60)
         
         # Data preparation
+        df['CODIGO RUBRO PRESUPUESTAL'] = df['CODIGO RUBRO PRESUPUESTAL'].astype(int)
+        df['CANTIDAD'] = df['CANTIDAD'].astype(int)
+        df['VALOR UNITARIO'] = df['VALOR UNITARIO'].astype(int)
         df['VALOR TOTAL'] = pd.to_numeric(df['VALOR TOTAL'], errors='coerce').fillna(0)
         df['Valor Comprado'] = df['Valor Comprado'].fillna(0).astype(float)
         df['Solicitud Pedido'] = df['Solicitud Pedido'].astype(bool)
@@ -61,6 +64,13 @@ if not filtered_df.empty:
         edited_df = st.data_editor(
             filtered_df, 
             column_config={
+                'AREA': st.column_config.Column("Centro de costo", help="Indica el centro de costo"),
+                'CODIGO RUBRO PRESUPUESTAL': st.column_config.Column("Rubro Presupuestal", help="Indica el rubro presupuestal"),
+                'EQUIPO / ITEM': st.column_config.Column("Activo fijo", help="Indica el activo fijo"),
+                'CANTIDAD': st.column_config.Column("Cantidad", help="Indica la cantidad del activo fijo"),
+                'VALOR UNITARIO': st.column_config.Column("Valor unitario", help="Indica el valor unitario del activo fijo"),
+                'VALOR TOTAL': st.column_config.Column("Valor total", help="Indica el valor total del activo fijo"),
+                'PRIORIZACION': st.column_config.Column("Prioridad", help="Indica la prioridad del activo fijo"),
                 'Solicitud Pedido': st.column_config.CheckboxColumn('Solicitud Pedido', help="Indica si se ha recibido la solicitud del pedido", default=False),
                 'Cotizado': st.column_config.CheckboxColumn('Cotizado', help="Indica si se ha realizado la cotización", default=False),
                 'Aprobado': st.column_config.CheckboxColumn('Aprobado', help="Indica si se ha aprobado la cotización", default=False),
@@ -77,7 +87,29 @@ if not filtered_df.empty:
     # Update session state with edited values using index matching ONLY when button is pressed
     if submit_local:
         if not edited_df.equals(filtered_df):
-            st.session_state.df.update(edited_df)
+            # Obtener los índices que no están en la vista filtrada (para mantenerlos)
+            idx_fuera_filtro = st.session_state.df.index[~st.session_state.df.index.isin(filtered_df.index)]
+            df_fuera_filtro = st.session_state.df.loc[idx_fuera_filtro]
+            
+            # Combinar filas no filtradas con las editadas (que incluyen nuevas y eliminadas)
+            new_df = pd.concat([df_fuera_filtro, edited_df], ignore_index=True)
+            
+            # Asegurar tipos de datos para evitar errores en GSheets o en el Dashboard
+            try:
+                new_df['CODIGO RUBRO PRESUPUESTAL'] = pd.to_numeric(new_df['CODIGO RUBRO PRESUPUESTAL'], errors='coerce').fillna(0).astype(int)
+                new_df['CANTIDAD'] = pd.to_numeric(new_df['CANTIDAD'], errors='coerce').fillna(0).astype(int)
+                new_df['VALOR UNITARIO'] = pd.to_numeric(new_df['VALOR UNITARIO'], errors='coerce').fillna(0).astype(int)
+                new_df['VALOR TOTAL'] = new_df['CANTIDAD'] * new_df['VALOR UNITARIO']
+                new_df['Valor Comprado'] = pd.to_numeric(new_df['Valor Comprado'], errors='coerce').fillna(0).astype(float)
+                
+                # Asegurar que las columnas de estado sean booleanas
+                for col in ['Solicitud Pedido', 'Cotizado', 'Aprobado', 'Comprado']:
+                    if col in new_df.columns:
+                        new_df[col] = new_df[col].fillna(False).astype(bool)
+            except Exception as e:
+                st.error(f"Error al procesar tipos de datos: {str(e)}")
+            
+            st.session_state.df = new_df
             st.success("Cambios aplicados localmente. ¡Recuerda guardar en la nube!", icon="✍️")
             time.sleep(1)
             st.rerun()
