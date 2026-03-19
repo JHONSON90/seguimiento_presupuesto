@@ -106,8 +106,33 @@ with st.expander("📎 Agregar movimiento cuentas general a la app"):
                 st.warning("⚠️ Por favor, selecciona un archivo Excel primero antes de guardar.")
 
 with st.expander("☁️ Agregar Compras a la app"):
-    st.info("Recuerda que el archivo debe estar sin subtotales y contener Hoja1 (2)")
     
+    # Mapeo de Rubros Presupuestales (Extraído para facilitar mantenimiento)
+    RUBROS_DATOS = {
+        'para_cruce': [
+            '1_1','2_1','3_1','4_1','4_2','4_3','5_1','5_2','5_3','6_1','6_2','7_1','7_2','8_1','8_2','9_1',
+            '9_2','10_1','10_2','11_1','11_2','12_1','12_2','13_1','13_2','14_1','14_2','300_5','300_10',
+            '300_15','301_5','302_5','303_5','304_5','305_5','305_10','306_5','307_5','308_5','309_5',
+            '310_5','311_5','312_5','313_5','314_5','315_5','316_5','316_6','317_5'
+        ],
+        "RUBRO": [
+            '60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico',
+            '60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento',
+            '60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento',
+            '60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico','60102 - Mantenimiento',
+            '60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento',
+            '60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento',
+            '60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento',
+            '60102 - Mantenimiento','60104 - Servicio Farmaceutico','60103 - Osteosintesis',
+            '60104 - Servicio Farmaceutico','60101 - Laboratorio Clinico','60104 - Servicio Farmaceutico',
+            '60104 - Servicio Farmaceutico','60106 - Suministros','60106 - Suministros','60106 - Suministros',
+            '60106 - Suministros','60106 - Suministros','60106 - Suministros','60102 - Mantenimiento',
+            '60106 - Suministros','60102 - Mantenimiento','60106 - Suministros','60106 - Suministros',
+            '60106 - Suministros','60105 - Sistemas','60106 - Suministros','60106 - Suministros',
+            '60106 - Suministros'
+        ]
+    }
+
     with st.form("form_compras"):
         ruta = st.file_uploader("Selecciona el archivo Excel", type=["xlsx"])
         btn_guardar = st.form_submit_button("💾 Guardar en base de datos", type="primary")
@@ -116,50 +141,56 @@ with st.expander("☁️ Agregar Compras a la app"):
             if ruta is not None:
                 with st.spinner("Procesando y guardando datos..."):
                     try:
+                        # 1. Carga y limpieza inicial
                         df_compras = pd.read_excel(ruta, skiprows=6, sheet_name="Hoja1 (2)")
                         df_compras.columns = df_compras.columns.str.strip()
-                        #eliminar filas en cuenta no comience con 14
-                        df_compras = df_compras[df_compras['CUENTA'].str.startswith('14')]
-                        #cambiar tipo de datos para poder calcular el saldo
-                        df_compras['DEBITOS'] = pd.to_numeric(df_compras['DEBITOS']).fillna(0)
-                        df_compras['CREDITOS'] = df_compras['CREDITOS'].str.replace(' ', '')
-                        df_compras['CREDITOS'] = pd.to_numeric(df_compras['CREDITOS']).fillna(0)
-                        df_compras['DEBITOS'] = df_compras['DEBITOS'].fillna(0)
-                        df_compras['SALDO MOV.'] = df_compras['DEBITOS'] - df_compras ['CREDITOS']
-                        df_compras['linea_grupo'] = df_compras['INVENTARIO-CRUCE-CHEQUE'].str.extract(r'(\d{7})')
-                        #separar por linea y grupo entonces linea 3 primeros digitos y restante seria grupo
-                        lineas_grupos = df_compras['linea_grupo'].value_counts().reset_index()
-                        lineas_grupos['linea'] = lineas_grupos['linea_grupo'].str[:3]
-                        lineas_grupos['linea'] = pd.to_numeric(lineas_grupos['linea'])
-                        lineas_grupos['grupo'] = lineas_grupos['linea_grupo'].str[3:]
-                        lineas_grupos['grupo'] = pd.to_numeric(lineas_grupos['grupo'])
-                        #unir linea y grupo con un _ en medio
-                        lineas_grupos['para_cruce'] = lineas_grupos['linea'].astype(str) + '_' + lineas_grupos['grupo'].astype(str)
-
-                        #crear rubros pptales
-                        DATOS = {'para_cruce': ['1_1','2_1','3_1','4_1','4_2','4_3','5_1','5_2','5_3','6_1','6_2','7_1','7_2','8_1','8_2','9_1','9_2','10_1','10_2','11_1','11_2','12_1','12_2','13_1','13_2','14_1','14_2','300_5','300_10','300_15','301_5','302_5','303_5','304_5','305_5','305_10','306_5','307_5','308_5','309_5','310_5','311_5','312_5','313_5','314_5','315_5','316_5','316_6','317_5'],
-                        "RUBRO" :['60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60102 - Mantenimiento','60104 - Servicio Farmaceutico','60103 - Osteosintesis','60104 - Servicio Farmaceutico','60101 - Laboratorio Clinico','60104 - Servicio Farmaceutico','60104 - Servicio Farmaceutico','60106 - Suministros','60106 - Suministros','60106 - Suministros','60106 - Suministros','60106 - Suministros','60106 - Suministros','60102 - Mantenimiento','60106 - Suministros','60102 - Mantenimiento','60106 - Suministros','60106 - Suministros','60106 - Suministros','60105 - Sistemas','60106 - Suministros','60106 - Suministros','60106 - Suministros']
-                        }
-                        RUBROS = pd.DataFrame(DATOS)
-                        lineas_rubros = pd.merge(lineas_grupos, RUBROS, on='para_cruce', how='left')
-                        lineas_rubros = lineas_rubros.drop(columns=['count', 'linea', 'grupo'])
-                        para_compras = pd.merge(df_compras, lineas_rubros, on='linea_grupo', how='left')
-                        para_compras = para_compras[['FECHA', 'RUBRO', 'SALDO MOV.']]
-                        para_compras.columns = ['FECHA', 'RUBRO', 'Valor']
-                        para_compras = para_compras.groupby(['FECHA', 'RUBRO'], as_index=False).agg({'Valor': 'sum'}).reset_index()
-                        para_compras['FECHA'] = pd.to_datetime(para_compras['FECHA']).dt.strftime('%Y-%m-%d')
-
-                        #Leer la base de datos SOLO al momento de guardar para ahorrar peticiones
-                        compras_reales = conn.read(worksheet="Control Compras", ttl=0)
-                        #TODO: HACER FUNCION PARA LEER EL ARCHIVO CONTROL GG Y CAMBIAR EL ESTADO DE LOS REGISTROS REALIZADOS EN EL MES QUE SE ESTA SUBIENDO EL INFORME PARA QUE PASE A SER REAL Y NO PROYECTADO Y QUE ESTOS NO SE MIREN REFLEJADOS EN LOS INFORMES
-                        compras_reales['FECHA'] = pd.to_datetime(compras_reales['FECHA']).dt.strftime('%Y-%m-%d')
-                        compras_reales = pd.concat([compras_reales, para_compras], ignore_index=True)
-                        #quitar duplicados para evitar que se repitan los registros
-                        compras_reales = compras_reales.drop_duplicates(subset=['FECHA', 'RUBRO', 'Valor'])
-                        conn.update(worksheet="Control Compras", data=compras_reales) #169 filas
                         
-                        st.toast("✅ Libro diario agregado exitosamente!!")
-                        st.cache_data.clear() # Limpiar caché por si otras vistas usan los datos
+                        # 2. Filtrado por cuenta (solo las que comienzan con 14)
+                        if 'CUENTA' in df_compras.columns:
+                            df_compras = df_compras[df_compras['CUENTA'].astype(str).str.startswith('14')]
+                        
+                        # 3. Conversión numérica robusta (evita error de espacios en blanco)
+                        for col in ['DEBITOS', 'CREDITOS']:
+                            if col in df_compras.columns:
+                                df_compras[col] = pd.to_numeric(df_compras[col], errors='coerce').fillna(0)
+                        
+                        df_compras['SALDO MOV.'] = df_compras.get('DEBITOS', 0) - df_compras.get('CREDITOS', 0)
+                        
+                        # 4. Procesamiento de Rubros (Cruce de Líneas y Grupos)
+                        if 'INVENTARIO-CRUCE-CHEQUE' in df_compras.columns:
+                            df_compras['linea_grupo'] = df_compras['INVENTARIO-CRUCE-CHEQUE'].str.extract(r'(\d{7})')
+                            
+                            # Función auxiliar para generar el código de cruce (linea_grupo)
+                            def get_para_cruce(val):
+                                if pd.isna(val) or len(str(val)) < 7: return None
+                                s = str(val)
+                                return f"{int(s[:3])}_{int(s[3:])}"
+                            
+                            df_compras['para_cruce'] = df_compras['linea_grupo'].apply(get_para_cruce)
+                            
+                            # Unir con mapeo de rubros
+                            df_rubros_ref = pd.DataFrame(RUBROS_DATOS)
+                            df_compras = pd.merge(df_compras, df_rubros_ref, on='para_cruce', how='left')
+                        
+                        # 5. Preparar datos para consolidación
+                        df_final = df_compras[['FECHA', 'RUBRO', 'SALDO MOV.']].copy()
+                        df_final.columns = ['FECHA', 'RUBRO', 'Valor']
+                        
+                        # Agrupar y formatear fecha
+                        df_final = df_final.groupby(['FECHA', 'RUBRO'], as_index=False)['Valor'].sum()
+                        df_final['FECHA'] = pd.to_datetime(df_final['FECHA']).dt.strftime('%Y-%m-%d')
+
+                        # 6. Actualizar Base de Datos en la Nube
+                        compras_reales = conn.read(worksheet="Control Compras", ttl=0)
+                        compras_reales['FECHA'] = pd.to_datetime(compras_reales['FECHA']).dt.strftime('%Y-%m-%d')
+                        
+                        db_actualizada = pd.concat([compras_reales, df_final], ignore_index=True)
+                        db_actualizada = db_actualizada.drop_duplicates(subset=['FECHA', 'RUBRO', 'Valor'])
+                        
+                        conn.update(worksheet="Control Compras", data=db_actualizada)
+                        
+                        st.toast("✅ ¡Compras agregadas exitosamente!")
+                        st.cache_data.clear()
                         
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
