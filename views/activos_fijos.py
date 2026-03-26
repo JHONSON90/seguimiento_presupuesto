@@ -203,7 +203,7 @@ if not filtered_df.empty:
             yaxis_title="Monto ($)",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        st.plotly_chart(fig_area, use_container_width=True)
+        st.plotly_chart(fig_area, width='stretch')
 
     with chart_col2:
         st.markdown("#### 🔄 Proceso de Gestión")
@@ -227,7 +227,7 @@ if not filtered_df.empty:
             margin=dict(l=20, r=20, t=20, b=20),
             height=350
         )
-        st.plotly_chart(fig_status, use_container_width=True)
+        st.plotly_chart(fig_status, width='stretch')
 
     # New Section: Breakdown by Rubro Presupuestal
     st.markdown("#### 📖 Ejecución por Rubro Presupuestal")
@@ -271,7 +271,7 @@ if not filtered_df.empty:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         font=dict(size=14) # INCREASED font size
     )
-    st.plotly_chart(fig_rubro, use_container_width=True)
+    st.plotly_chart(fig_rubro, width='stretch')
 else:
     st.info("No hay datos para mostrar en el dashboard.")
 
