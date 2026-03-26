@@ -121,7 +121,7 @@ with data4:
 
 #region compras
 
-df3['FECHA'] = pd.to_datetime(df3['FECHA'], format='%Y/%m/%d')
+df3['FECHA'] = pd.to_datetime(df3['FECHA'])
 df3['Mes'] = df3['FECHA'].dt.month_name()
 df3['N_Mes'] = df3['FECHA'].dt.month
 
