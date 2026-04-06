@@ -91,7 +91,7 @@ with st.expander("📎 Agregar movimiento cuentas general a la app"):
                         #st.write(agrupado)
                         
                         #Leer la base de datos SOLO al momento de guardar para ahorrar peticiones
-                        df_libros = conn.read(worksheet="Gastos_Grales_reales", ttl=60)
+                        df_libros = conn.read(worksheet="Gastos_Grales_reales", ttl=0)
                         #TODO: HACER FUNCION PARA LEER EL ARCHIVO CONTROL GG Y CAMBIAR EL ESTADO DE LOS REGISTROS REALIZADOS EN EL MES QUE SE ESTA SUBIENDO EL INFORME PARA QUE PASE A SER REAL Y NO PROYECTADO Y QUE ESTOS NO SE MIREN REFLEJADOS EN LOS INFORMES
                         
                         df_libros = pd.concat([df_libros, agrupado], ignore_index=True)
@@ -192,6 +192,54 @@ with st.expander("☁️ Agregar Compras a la app"):
                         st.toast("✅ ¡Compras agregadas exitosamente!")
                         st.cache_data.clear()
                         
+                    except Exception as e:
+                        st.error(f"Error al procesar el archivo: {e}")
+            else:
+                st.warning("⚠️ Por favor, selecciona un archivo Excel primero antes de guardar.")
+
+
+with st.expander("✨Agregar Informe de costos"):
+    with st.form("form_costos"):
+        fecha_informe = st.date_input('🗓️ Fecha del informe')
+        ruta = st.file_uploader("Selecciona el archivo Excel", type=["xlsx"])
+        btn_guardar = st.form_submit_button("💾 Guardar en base de datos", type="primary")
+        
+        if btn_guardar:
+            if ruta is not None:
+                with st.spinner("Procesando y guardando datos..."):
+                    try:
+                        # 1. Carga y limpieza inicial
+                        pd_costos = pd.read_excel(ruta, skiprows=4, sheet_name="INFORME DE COSTOS 2026")
+                        pd_costos = pd_costos.dropna(subset=['CENTRO DE COSTOS'])
+                        #elimina de la fila que donde en la columna 'CENTRO DE COSTOS' lo que diga total diferencias
+                        pd_costos = pd_costos[~pd_costos['CENTRO DE COSTOS'].isin(['TOTAL', 'TOTAL GENERAL', 'Total general', 'DIFERENCIAS', "PROMOCION Y PREVENCION A", "SERVICIO FARMACÉUTICO A", "ALBAN", "ANCUYA", "APOYO DIAGNOSTICO","APOYO TERAPEUTICO","BARBACOAS","BELEN","BERRUECOS","BUESACO","CALI","COLON GENOVA","ECIS PYM","EL CHARCO","EL ROSARIO","EL TABLON","FRANCISCO PIZARRO","GUACHUCAL","GUAITARILLA","LA FLORIDA","LA TOLA","LEIVA","LINARES","MAGUI","MALLAMA","MEDICINA ESPECIALIZADA","MOSQUERA","MUNICIPIOS","ODONTOLOGIA ESPECIALIZADA","OLAYA HERERA","RICAURTE","ROBERTO PAYAN","SAMANIEGO","SAN BERNARDO","SAN LORENZO","SAN PEDRO DE CARTAGO","SANTA BARBARA","TAMINANGO","TANGUA","TOTAL GENERAL"])]
+
+                        #ELIMINAR COLUMNAS A, B, UNIDADES FUNCIONALES
+                        pd_costos = pd_costos.drop(columns=['A', 'B', 'UNIDADES FUNCIONALES', 'UNIDAD FUNCIONAL 2','AREA','TOTAL COSTOS DIRECTOS','TOTAL COSTOS INDIRECTOS','TOTAL PARA DISTRIBUIR COMUNICACIÓN','TOTAL PARA DISTRIBUCIÓN DE GASTOS GENERALES','TOTAL PARA DISTRIBUIR PROCESOS DE APOYO ADMINISTRATIVO','DISTRIBUCION ORIENTACION Y VIGILANCIA', 'DISTRIBUCION SERVICIOS GENERALES', 'TOTAL PARA DISTRIBUIR PROCESOS DE APOYO ASISTENCIAL', 'DISTRIBUCION CITAS MEDICAS ', 'AMBULANCIA', 'CAMILLEROS', 'DISTRIBUCION LAVANDERIA', 'DIRECCION CLINICA', 'PROGRAMA IAMI - AIEPI', 'SALUD MENTAL', 'EPIDEMIOLOGIA', 'SEGURIDAD DEL PACIENTE', 'DISTRIBUCION SERVICIO FARMACEUTICO', 'TOTAL PARA DISTRIBUICIN DE ADMINISTRACION', '%', 'CARGA ADMINISTRATIVA', 'CARGA ASEGURADORA', 'TOTAL', '%.1','TOTAL MAS CUENTAS MEDICAS', '%.2', 'Unnamed: 52', 'Unnamed: 53', 'MANTENIMIENTO'])
+                        #unpivotear la tabla para pasar
+                        pd_costos = pd.melt(pd_costos, id_vars=['CENTRO DE COSTOS'], value_vars=['TOTAL RELACION LABORAL', 'HONORARIOS', 'CONSUMOS DE INSUMOS', 'MEDICAMENTOS',       'DISPOSITIVOS MEDICOS FORMULADOS', 'DISPOSITIVOS MEDICOS DE CONSUMO',       'ALIMENTACION HOSPITALARIA','OXIGENO-     GAS-      AIRE                                  ','SANGRE', 'OTROS COSTOS DIRECTOS',  'ARRENDAMIENTOS', 'DEPRECIACION ACTIVOS FIJOS', 'DEPRECIACION EDIFICIO',       'INCINERACION', 'AGUA', 'ENERGIA','COMUNICACIÓN','GASTOS GENERALES', 'CUENTAS MEDICAS'], value_name='valor_costo')
+                        pd_costos['valor_costo'] = pd.to_numeric(pd_costos['valor_costo'], errors='coerce').fillna(0).astype(int)
+
+                        pd_costos = pd_costos[pd_costos['valor_costo'] != 0]
+                        pd_costos
+
+                        datos_cruce = {
+                            "variable": ['TOTAL RELACION LABORAL','CONSUMOS DE INSUMOS','MEDICAMENTOS ','DISPOSITIVOS MEDICOS FORMULADOS','DISPOSITIVOS MEDICOS DE CONSUMO','ALIMENTACION HOSPITALARIA','SANGRE','DEPRECIACION ACTIVOS FIJOS','DEPRECIACION EDIFICIO','INCINERACION','AGUA','ENERGIA','COMUNICACIÓN','GASTOS GENERALES','CUENTAS MEDICAS','HONORARIOS','OTROS COSTOS DIRECTOS','ARRENDAMIENTOS', 'MEDICAMENTOS', 'DISPOSITIVOS MEDICOS FORMULADOS'],
+                            'Rubro Presupuestal': ['50101 - GASTOS DE PERSONAL','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50109 - SERVICIOS','50120 - MATERIALES Y SUMINISTROS','50112 - DEPRECIACION','50112 - DEPRECIACION','50109 - SERVICIOS','50109 - SERVICIOS','50109 - SERVICIOS','50109 - SERVICIOS','OTROS GASTOS','50104 - HONORARIOS','50104 - HONORARIOS','OTROS GASTOS','50106 - ARRENDAMIENTOS', '60104 - SERVICIO FARMACEUTICO', '60104 - SERVICIO FARMACEUTICO']
+                        }
+                        df_datos_cruce = pd.DataFrame(datos_cruce)
+
+                        para_enviar = pd.merge(pd_costos, df_datos_cruce, on='variable', how='left')
+
+                        para_enviar['FECHA'] = fecha_informe
+
+                        #actualizar en base de datos
+                        costos_reales = conn.read(worksheet="Control por CC", ttl=0)
+                        costos_unidos_reales = pd.concat([costos_reales, para_enviar], ignore_index=True)
+                        conn.update(worksheet="Control por CC", data=costos_unidos_reales)
+                        st.toast("✅ Informe de costos agregado exitosamente!!")
+                        st.cache_data.clear()
+                          #st.write(para_enviar)
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
             else:
