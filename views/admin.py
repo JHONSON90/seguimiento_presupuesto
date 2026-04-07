@@ -225,21 +225,34 @@ with st.expander("✨Agregar Informe de costos"):
 
                         datos_cruce = {
                             "variable": ['TOTAL RELACION LABORAL','CONSUMOS DE INSUMOS','MEDICAMENTOS ','DISPOSITIVOS MEDICOS FORMULADOS','DISPOSITIVOS MEDICOS DE CONSUMO','ALIMENTACION HOSPITALARIA','SANGRE','DEPRECIACION ACTIVOS FIJOS','DEPRECIACION EDIFICIO','INCINERACION','AGUA','ENERGIA','COMUNICACIÓN','GASTOS GENERALES','CUENTAS MEDICAS','HONORARIOS','OTROS COSTOS DIRECTOS','ARRENDAMIENTOS', 'MEDICAMENTOS', 'DISPOSITIVOS MEDICOS FORMULADOS'],
-                            'Rubro Presupuestal': ['50101 - GASTOS DE PERSONAL','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50109 - SERVICIOS','50120 - MATERIALES Y SUMINISTROS','50112 - DEPRECIACION','50112 - DEPRECIACION','50109 - SERVICIOS','50109 - SERVICIOS','50109 - SERVICIOS','50109 - SERVICIOS','OTROS GASTOS','50104 - HONORARIOS','50104 - HONORARIOS','OTROS GASTOS','50106 - ARRENDAMIENTOS', '60104 - SERVICIO FARMACEUTICO', '60104 - SERVICIO FARMACEUTICO']
+                            'Rubro Presupuestal': ['50101 - GASTOS DE PERSONAL','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50120 - MATERIALES Y SUMINISTROS','50109 - SERVICIOS','50120 - MATERIALES Y SUMINISTROS','50112 - DEPRECIACION','50112 - DEPRECIACION','50109 - SERVICIOS','50109 - SERVICIOS','50109 - SERVICIOS','50109 - SERVICIOS','OTROS GASTOS','50104 - HONORARIOS','50104 - HONORARIOS','OTROS GASTOS','50106 - ARRENDAMIENTOS', '50120 - MATERIALES Y SUMINISTROS', '50120 - MATERIALES Y SUMINISTROS']
                         }
                         df_datos_cruce = pd.DataFrame(datos_cruce)
 
-                        para_enviar = pd.merge(pd_costos, df_datos_cruce, on='variable', how='left')
+                        valor_medicamentos = pd_costos[pd_costos['variable'] == 'MEDICAMENTOS']['valor_costo'].sum()
+                        valor_dispositivos_medicos_formulados = pd_costos[pd_costos['variable'] == 'DISPOSITIVOS MEDICOS FORMULADOS']['valor_costo'].sum()
 
+                        valor_sf = valor_dispositivos_medicos_formulados + valor_medicamentos
+
+                        pd_costos = pd_costos[~pd_costos['variable'].isin(['MEDICAMENTOS', 'DISPOSITIVOS MEDICOS FORMULADOS'])]
+                        
+                        #incluir una fila que diga SERVICIO FARMACEUTICO COMO CENTRO DE COSTO VARIABLE MEDICAMENTOS Y valor_costo = valor_medicamentos
+                        incluir = {'CENTRO DE COSTOS': 'SERVICIO FARMACEUTICO', 'variable': 'MEDICAMENTOS ', 'valor_costo': valor_sf}
+
+                        incluir = pd.DataFrame([incluir])
+                        pd_costos = pd.concat([pd_costos, incluir], ignore_index=True)
+
+                        para_enviar = pd.merge(pd_costos, df_datos_cruce, on='variable', how='left')
                         para_enviar['FECHA'] = fecha_informe
 
                         #actualizar en base de datos
                         costos_reales = conn.read(worksheet="Control por CC", ttl=0)
                         costos_unidos_reales = pd.concat([costos_reales, para_enviar], ignore_index=True)
+
+
                         conn.update(worksheet="Control por CC", data=costos_unidos_reales)
                         st.toast("✅ Informe de costos agregado exitosamente!!")
                         st.cache_data.clear()
-                          #st.write(para_enviar)
                     except Exception as e:
                         st.error(f"Error al procesar el archivo: {e}")
             else:
