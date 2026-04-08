@@ -101,7 +101,7 @@ def procesar_datos(df_ppto, df_real):
     # Cálculos derivados
     df_final['Diferencia'] = df_final['Presupuesto'] - df_final['Ejecutado']
     df_final['% Ejecución'] = (
-        (df_final['Ejecutado'] / df_final['Presupuesto'].replace(0, pd.NA)) * 100
+        (df_final['Ejecutado'] / df_final['Presupuesto'].replace(0, None)) * 100
     ).fillna(0)
 
     return df_final
@@ -124,7 +124,6 @@ if df_final.empty:
 # ENCABEZADO
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.write(df_final)
 st.title("🛡️ Dashboard de Seguimiento Presupuestal 2026")
 st.markdown("Comparativo entre **Presupuesto Aprobado** y **Ejecución Real** por CC y Rubro.")
 
@@ -214,7 +213,7 @@ with col_chart1:
         height=420,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
-    st.plotly_chart(fig_trend, use_container_width=True)
+    st.plotly_chart(fig_trend, width = 'stretch')
 
 with col_chart2:
     st.subheader("🎯 Distribución por Rubro")
@@ -229,7 +228,7 @@ with col_chart2:
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
         fig_pie.update_layout(height=420)
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, width = 'stretch')
     else:
         st.info("Sin ejecución para mostrar.")
 
@@ -251,7 +250,7 @@ df_cc_summary = (
     .reset_index()
 )
 df_cc_summary['% Ejecución'] = (
-    df_cc_summary['Ejecutado'] / df_cc_summary['Presupuesto'].replace(0, pd.NA) * 100
+    df_cc_summary['Ejecutado'] / df_cc_summary['Presupuesto'].replace(0, None) * 100
 ).fillna(0).round(1)
 
 st.dataframe(
@@ -265,7 +264,7 @@ st.dataframe(
         ),
     },
     hide_index=True,
-    use_container_width=True
+    width = 'stretch'
 )
 
 st.markdown("---")
@@ -289,7 +288,7 @@ df_rubro_mes = (
 )
 df_rubro_mes['Diferencia'] = df_rubro_mes['Presupuesto'] - df_rubro_mes['Ejecutado']
 df_rubro_mes['% Ejecución'] = (
-    df_rubro_mes['Ejecutado'] / df_rubro_mes['Presupuesto'].replace(0, pd.NA) * 100
+    df_rubro_mes['Ejecutado'] / df_rubro_mes['Presupuesto'].replace(0, None) * 100
 ).fillna(0).round(1)
 
 with tab_tabla:
@@ -305,7 +304,7 @@ with tab_tabla:
             ),
         },
         hide_index=True,
-        use_container_width=True
+        width = 'stretch'
     )
 
 with tab_grafico:
@@ -339,7 +338,7 @@ with tab_grafico:
         height=400,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
-    st.plotly_chart(fig_rubro, use_container_width=True)
+    st.plotly_chart(fig_rubro, width = 'stretch')
 
 st.markdown("---")
 
@@ -351,7 +350,7 @@ st.subheader("🚨 Alertas: Centros de Costo sobre el Presupuesto")
 df_cc_alerta = df_cc_summary[df_cc_summary['Diferencia'] < 0].copy()
 df_cc_alerta['Sobre-ejecución'] = df_cc_alerta['Ejecutado'] - df_cc_alerta['Presupuesto']
 df_cc_alerta['% Exceso'] = (
-    df_cc_alerta['Sobre-ejecución'] / df_cc_alerta['Presupuesto'].replace(0, pd.NA) * 100
+    df_cc_alerta['Sobre-ejecución'] / df_cc_alerta['Presupuesto'].replace(0, None) * 100
 ).fillna(0).round(1)
 
 if df_cc_alerta.empty:
@@ -375,7 +374,7 @@ else:
         height=max(300, len(df_cc_alerta) * 50 + 100),
         margin=dict(l=200)
     )
-    st.plotly_chart(fig_alerta_cc, use_container_width=True)
+    st.plotly_chart(fig_alerta_cc, width = 'stretch')
 
     st.dataframe(
         df_cc_alerta[['CENTRO DE COSTOS', 'Presupuesto', 'Ejecutado', 'Sobre-ejecución', '% Exceso']]
@@ -387,7 +386,7 @@ else:
             "% Exceso": st.column_config.NumberColumn("% Exceso", format="%.1f%%"),
         },
         hide_index=True,
-        use_container_width=True
+        width = 'stretch'
     )
 
 st.markdown("---")
@@ -410,7 +409,7 @@ df_rubro_alerta = (
 df_rubro_alerta['Diferencia'] = df_rubro_alerta['Presupuesto'] - df_rubro_alerta['Ejecutado']
 df_rubro_alerta['Sobre-ejecución'] = df_rubro_alerta['Ejecutado'] - df_rubro_alerta['Presupuesto']
 df_rubro_alerta['% Exceso'] = (
-    df_rubro_alerta['Sobre-ejecución'] / df_rubro_alerta['Presupuesto'].replace(0, pd.NA) * 100
+    df_rubro_alerta['Sobre-ejecución'] / df_rubro_alerta['Presupuesto'].replace(0, None) * 100
 ).fillna(0).round(1)
 
 df_rubro_alerta_filtrado = df_rubro_alerta[df_rubro_alerta['Diferencia'] < 0].copy()
@@ -443,7 +442,7 @@ else:
             xaxis_title="Rubro Presupuestal",
             yaxis_title="Centro de Costo"
         )
-        st.plotly_chart(fig_heat, use_container_width=True)
+        st.plotly_chart(fig_heat, width = 'stretch')
 
     st.dataframe(
         df_rubro_alerta_filtrado[
@@ -456,7 +455,7 @@ else:
             "% Exceso": st.column_config.NumberColumn("% Exceso", format="%.1f%%"),
         },
         hide_index=True,
-        use_container_width=True
+        width = 'stretch'
     )
 
 st.markdown("---")
@@ -475,5 +474,5 @@ with st.expander("📄 Ver Tabla de Datos Completa"):
             "% Ejecución": st.column_config.ProgressColumn("% Ejecución", format="%.1f%%", min_value=0, max_value=100),
         },
         hide_index=True,
-        use_container_width=True
+        width = 'stretch'
     )
