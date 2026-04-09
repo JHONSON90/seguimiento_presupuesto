@@ -25,6 +25,7 @@ require_login()
 
 email = st.user.email
 name = st.user.name
+
 role = get_role()
 
 
