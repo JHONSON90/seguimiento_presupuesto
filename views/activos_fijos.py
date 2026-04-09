@@ -22,8 +22,8 @@ if 'df' not in st.session_state:
         df['CODIGO RUBRO PRESUPUESTAL'] = df['CODIGO RUBRO PRESUPUESTAL'].astype(int)
         df['CANTIDAD'] = df['CANTIDAD'].astype(int)
         df['VALOR UNITARIO'] = df['VALOR UNITARIO'].astype(int)
-        df['VALOR TOTAL'] = pd.to_numeric(df['VALOR TOTAL'], errors='coerce').fillna(0)
-        df['Valor Comprado'] = df['Valor Comprado'].fillna(0).astype(float)
+        df['VALOR TOTAL'] = pd.to_numeric(df['VALOR TOTAL'], errors='coerce').infer_objects(copy=False).fillna(0)
+        df['Valor Comprado'] = df['Valor Comprado'].infer_objects(copy=False).fillna(0).astype(float)
         df['Solicitud Pedido'] = df['Solicitud Pedido'].astype(bool)
         df['Cotizado'] = df['Cotizado'].astype(bool)
         df['Aprobado'] = df['Aprobado'].astype(bool)
@@ -56,13 +56,19 @@ if activo_fijo:
 if prioridad:
     filtered_df = filtered_df[filtered_df['PRIORIZACION'].isin(prioridad)]
 
+# --- FIX: Ocultar índice con filas dinámicas requiere RangeIndex ---
+# Guardamos los índices originales para el merge posterior
+original_indices = filtered_df.index
+# Reseteamos para el editor
+filtered_df_for_editor = filtered_df.reset_index(drop=True)
+
 st.info("💡 **Instrucciones:** 1. Realiza todos los cambios en la tabla. \n **2.** Presiona 'Aplicar cambios locales'. \n **3.** Finalmente presiona 'Guardar TODO'.")
 if not filtered_df.empty:
     with st.form("editor_activos"):
         st.markdown("📝 Seguimiento de Activos Fijos")
         # Capture edited dataframe
         edited_df = st.data_editor(
-            filtered_df, 
+            filtered_df_for_editor, 
             column_config={
                 'AREA': st.column_config.SelectboxColumn(
                     "Centro de costo", 
@@ -101,9 +107,9 @@ if not filtered_df.empty:
         
     # Update session state with edited values using index matching ONLY when button is pressed
     if submit_local:
-        if not edited_df.equals(filtered_df):
+        if not edited_df.equals(filtered_df_for_editor):
             # Obtener los índices que no están en la vista filtrada (para mantenerlos)
-            idx_fuera_filtro = st.session_state.df.index[~st.session_state.df.index.isin(filtered_df.index)]
+            idx_fuera_filtro = st.session_state.df.index[~st.session_state.df.index.isin(original_indices)]
             df_fuera_filtro = st.session_state.df.loc[idx_fuera_filtro]
             
             # Combinar filas no filtradas con las editadas (que incluyen nuevas y eliminadas)
@@ -111,21 +117,21 @@ if not filtered_df.empty:
             
             # Asegurar tipos de datos para evitar errores en GSheets o en el Dashboard
             try:
-                new_df['CODIGO RUBRO PRESUPUESTAL'] = pd.to_numeric(new_df['CODIGO RUBRO PRESUPUESTAL'], errors='coerce').fillna(0).astype(int)
-                new_df['CANTIDAD'] = pd.to_numeric(new_df['CANTIDAD'], errors='coerce').fillna(0).astype(int)
-                new_df['VALOR UNITARIO'] = pd.to_numeric(new_df['VALOR UNITARIO'], errors='coerce').fillna(0).astype(int)
+                new_df['CODIGO RUBRO PRESUPUESTAL'] = pd.to_numeric(new_df['CODIGO RUBRO PRESUPUESTAL'], errors='coerce').infer_objects(copy=False).fillna(0).astype(int)
+                new_df['CANTIDAD'] = pd.to_numeric(new_df['CANTIDAD'], errors='coerce').infer_objects(copy=False).fillna(0).astype(int)
+                new_df['VALOR UNITARIO'] = pd.to_numeric(new_df['VALOR UNITARIO'], errors='coerce').infer_objects(copy=False).fillna(0).astype(int)
                 new_df['VALOR TOTAL'] = new_df['CANTIDAD'] * new_df['VALOR UNITARIO']
-                new_df['Valor Comprado'] = pd.to_numeric(new_df['Valor Comprado'], errors='coerce').fillna(0).astype(float)
+                new_df['Valor Comprado'] = pd.to_numeric(new_df['Valor Comprado'], errors='coerce').infer_objects(copy=False).fillna(0).astype(float)
                 
                 # Asegurar que las columnas de estado sean booleanas
                 for col in ['Solicitud Pedido', 'Cotizado', 'Aprobado', 'Comprado']:
                     if col in new_df.columns:
-                        new_df[col] = new_df[col].fillna(False).astype(bool)
+                        new_df[col] = new_df[col].infer_objects(copy=False).fillna(False).astype(bool)
                 
                 # Manejar valores vacíos en strings para evitar NaN en GSheets
-                new_df['PRIORIZACION'] = new_df['PRIORIZACION'].fillna('Nuevo').replace('', 'Nuevo')
-                new_df['AREA'] = new_df['AREA'].fillna('').astype(str)
-                new_df['EQUIPO / ITEM'] = new_df['EQUIPO / ITEM'].fillna('').astype(str)
+                new_df['PRIORIZACION'] = new_df['PRIORIZACION'].infer_objects(copy=False).fillna('Nuevo').replace('', 'Nuevo')
+                new_df['AREA'] = new_df['AREA'].infer_objects(copy=False).fillna('').astype(str)
+                new_df['EQUIPO / ITEM'] = new_df['EQUIPO / ITEM'].infer_objects(copy=False).fillna('').astype(str)
                 
             except Exception as e:
                 st.error(f"Error al procesar tipos de datos: {str(e)}")

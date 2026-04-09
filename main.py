@@ -27,10 +27,15 @@ email = st.user.email
 name = st.user.name
 role = get_role()
 
+
+st.sidebar.link_button("Analizar datos", url='https://costosproin.streamlit.app/', type='primary')
+
+st.sidebar.markdown("---")
 st.sidebar.write(f"Bienvenido {name}")
 
 if st.sidebar.button("Cerrar Sesión"):
     st.logout()
+
 
 
 #Paginas

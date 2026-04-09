@@ -5,6 +5,60 @@ import plotly.express as px
 import plotly.graph_objects as go
 import traceback
 
+# ── BOTÓN FLOTANTE — Análisis profundo ────────────────────────────────────────
+st.markdown("""
+<style>
+.fab-container {
+    position: fixed;
+    bottom: 2.2rem;
+    right: 2.2rem;
+    z-index: 9999;
+}
+.fab-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    color: #fff !important;
+    text-decoration: none !important;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(26,115,232,0.45);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    border: none;
+    letter-spacing: 0.3px;
+}
+.fab-btn:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 10px 28px rgba(26,115,232,0.55);
+    color: #fff !important;
+    text-decoration: none !important;
+}
+.fab-btn svg {
+    flex-shrink: 0;
+}
+</style>
+
+<div class="fab-container">
+    <a class="fab-btn" href="https://costosproin.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+        Análisis Profundo
+    </a>
+</div>
+""", unsafe_allow_html=True)
+# ─────────────────────────────────────────────────────────────────────────────
+
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
@@ -47,7 +101,7 @@ def procesar_datos(df_ppto, df_real):
     df_ppto_long['Mes'] = df_ppto_long['Mes_Nom'].map(MES_MAP).astype(int)
     df_ppto_long['Presupuesto'] = pd.to_numeric(
         df_ppto_long['Presupuesto'], errors='coerce'
-    ).fillna(0)
+    ).infer_objects(copy=False).fillna(0)
 
     df_ppto_long = df_ppto_long.groupby(['CENTRO DE COSTOS', 'Rubro Presupuestal', 'Mes_Nom', 'Mes']).agg(
         Presupuesto=('Presupuesto', 'sum')
@@ -69,7 +123,7 @@ def procesar_datos(df_ppto, df_real):
     df_real['Mes'] = df_real['FECHA'].dt.month.astype(int)
     df_real['valor_costo'] = pd.to_numeric(
         df_real['valor_costo'], errors='coerce'
-    ).fillna(0)
+    ).infer_objects(copy=False).fillna(0)
 
     # Agrupar real por CC + Rubro + Mes
     df_real_agg = (
@@ -89,7 +143,7 @@ def procesar_datos(df_ppto, df_real):
         df_real_agg,
         on=['CENTRO DE COSTOS', 'Rubro Presupuestal', 'Mes'],
         how='outer'
-    ).fillna(0)
+    ).infer_objects(copy=False).fillna(0)
 
     # FIX: eliminar filas con Mes==0 producidas por fillna del merge outer
     df_final = df_final[df_final['Mes'] > 0].copy()
@@ -102,7 +156,7 @@ def procesar_datos(df_ppto, df_real):
     df_final['Diferencia'] = df_final['Presupuesto'] - df_final['Ejecutado']
     df_final['% Ejecución'] = (
         (df_final['Ejecutado'] / df_final['Presupuesto'].replace(0, None)) * 100
-    ).fillna(0)
+    ).infer_objects(copy=False).fillna(0)
 
     return df_final
 
@@ -251,7 +305,7 @@ df_cc_summary = (
 )
 df_cc_summary['% Ejecución'] = (
     df_cc_summary['Ejecutado'] / df_cc_summary['Presupuesto'].replace(0, None) * 100
-).fillna(0).round(1)
+).infer_objects(copy=False).fillna(0).round(1)
 
 st.dataframe(
     df_cc_summary.sort_values('Ejecutado', ascending=False),
@@ -289,7 +343,7 @@ df_rubro_mes = (
 df_rubro_mes['Diferencia'] = df_rubro_mes['Presupuesto'] - df_rubro_mes['Ejecutado']
 df_rubro_mes['% Ejecución'] = (
     df_rubro_mes['Ejecutado'] / df_rubro_mes['Presupuesto'].replace(0, None) * 100
-).fillna(0).round(1)
+).infer_objects(copy=False).fillna(0).round(1)
 
 with tab_tabla:
     st.dataframe(
@@ -351,7 +405,7 @@ df_cc_alerta = df_cc_summary[df_cc_summary['Diferencia'] < 0].copy()
 df_cc_alerta['Sobre-ejecución'] = df_cc_alerta['Ejecutado'] - df_cc_alerta['Presupuesto']
 df_cc_alerta['% Exceso'] = (
     df_cc_alerta['Sobre-ejecución'] / df_cc_alerta['Presupuesto'].replace(0, None) * 100
-).fillna(0).round(1)
+).infer_objects(copy=False).fillna(0).round(1)
 
 if df_cc_alerta.empty:
     st.success("✅ Ningún Centro de Costo ha superado su presupuesto en el período seleccionado.")
@@ -410,7 +464,7 @@ df_rubro_alerta['Diferencia'] = df_rubro_alerta['Presupuesto'] - df_rubro_alerta
 df_rubro_alerta['Sobre-ejecución'] = df_rubro_alerta['Ejecutado'] - df_rubro_alerta['Presupuesto']
 df_rubro_alerta['% Exceso'] = (
     df_rubro_alerta['Sobre-ejecución'] / df_rubro_alerta['Presupuesto'].replace(0, None) * 100
-).fillna(0).round(1)
+).infer_objects(copy=False).fillna(0).round(1)
 
 df_rubro_alerta_filtrado = df_rubro_alerta[df_rubro_alerta['Diferencia'] < 0].copy()
 
