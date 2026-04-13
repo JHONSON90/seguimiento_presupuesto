@@ -116,7 +116,7 @@ gastos = st.Page(
 
 presupuesto_total = st.Page(
     'views/ppto_total.py',
-    title = 'Presupuesto',
+    title = 'Gastos con Informe Consumos',
     icon = '🧮'
 )
 
@@ -132,7 +132,13 @@ admin = st.Page(
     icon = "⚙️"
 )
 
-paginas = [presupuesto_total, activos_fijos, consumos_bodega, gastos, ingresos_total]
+rentabilidad = st.Page(
+    'views/rentabilidad.py',
+    title = 'Rentabilidad',
+    icon = '📈'
+)
+
+paginas = [ingresos_total,  gastos,presupuesto_total, rentabilidad,  consumos_bodega, activos_fijos,]
 
 if role == 'admin':
     paginas.append(admin)
