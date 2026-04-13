@@ -112,6 +112,7 @@ gastos = st.Page(
     'views/gastos.py',
     title = 'Gastos',
     icon = '💸'
+    
 )
 
 presupuesto_total = st.Page(
