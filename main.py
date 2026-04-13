@@ -120,13 +120,19 @@ presupuesto_total = st.Page(
     icon = '🧮'
 )
 
+ingresos_total = st.Page(
+    'views/ingresos.py',
+    title = 'Ingresos',
+    icon = '💰'
+)
+
 admin = st.Page(
     'views/admin.py',
     title = 'Admin',
     icon = "⚙️"
 )
 
-paginas = [presupuesto_total, activos_fijos, consumos_bodega, gastos]
+paginas = [presupuesto_total, activos_fijos, consumos_bodega, gastos, ingresos_total]
 
 if role == 'admin':
     paginas.append(admin)

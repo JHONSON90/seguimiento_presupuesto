@@ -257,3 +257,46 @@ with st.expander("✨Agregar Informe de costos"):
                         st.error(f"Error al procesar el archivo: {e}")
             else:
                 st.warning("⚠️ Por favor, selecciona un archivo Excel primero antes de guardar.")
+
+with st.expander("💲 Agregar Ingresos"):
+    st.info("En esta sección se puedes agregar los ingresos de la empresa, recuerda que el informe para hacerlo es el movimiento general quitado subtotales y en una sola hoja osea solo tiene que tener Hoja1")
+    with st.form("form_ingresos"):
+        ruta = st.file_uploader("Selecciona el archivo Excel", type=["xlsx"])
+        btn_guardar = st.form_submit_button("💾 Guardar en base de datos", type="primary")
+        
+        if btn_guardar:
+            if ruta is not None:
+                with st.spinner("Procesando y guardando datos..."):
+                    try:
+                        unidades_funcionales = pd.DataFrame({'Cod_Uf': [4105,4110,4115,4120,4125,4130,4135], 'Nom Uni Funcio':['Urgencias', 'Consulta Externa', 'Hospitalizacion', 'Quirofano',  'Apoyo Diagnostico', 'Apoyo Terapeutico', 'Mercadeo']})
+
+
+                        ingresos_control = pd.read_excel(ruta, skiprows=6)
+                        ingresos_control.columns = ingresos_control.columns.str.strip()
+                        ingresos_control = ingresos_control[['FECHA', 'CUENTA', 'NIT', 'NOMBRE','DEBITOS', 'CREDITOS']]
+                        ingresos_control['CUENTA'] = ingresos_control['CUENTA'].str.replace(" ", "")
+                        ingresos_control['CREDITOS'] = pd.to_numeric(ingresos_control['CREDITOS'], errors='coerce').fillna(0).astype(int)
+                        ingresos_control['DEBITOS'] = pd.to_numeric(ingresos_control['DEBITOS'], errors='coerce').fillna(0).astype(int)
+                        ingresos_control['Saldo'] = ingresos_control['CREDITOS'] - ingresos_control['DEBITOS']
+                        ingresos_control['Unidad Funcional'] = ingresos_control['CUENTA'].str[:4].astype(int)
+                        ingresos_control = ingresos_control[ingresos_control['Unidad Funcional'] != 4135]
+                        ingresos_control['Unidad Funcional'] = pd.to_numeric(ingresos_control['Unidad Funcional'], errors='coerce').fillna(0).astype(int)
+                        ingresos_control = ingresos_control.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left')
+                        ingresos_control = ingresos_control[['FECHA', 'CUENTA', 'NIT', 'NOMBRE', 'DEBITOS', 'CREDITOS', 'Saldo','Unidad Funcional', 'Nom Uni Funcio']]
+
+                        #actualizar en base de datos
+                        ingresos_reales = conn.read(worksheet="Control_Ingresos", ttl=0)
+                        ingresos_unidos_reales = pd.concat([ingresos_reales, ingresos_control], ignore_index=True)
+
+
+                        conn.update(worksheet="Control_Ingresos", data=ingresos_unidos_reales)
+                        st.toast("✅ Informe de costos agregado exitosamente!!")
+                        st.cache_data.clear()
+                    except Exception as e:
+                        st.error(f"Error al procesar el archivo: {e}")
+            else:
+                st.warning("⚠️ Por favor, selecciona un archivo Excel primero antes de guardar.")
+
+
+                        
+
