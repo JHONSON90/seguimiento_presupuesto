@@ -11,15 +11,93 @@ st.set_page_config(
     layout="wide"
 )
 
-# st.markdown(
-#     """
-#     <style>
-#         /* Ocultar header principal barra superior de Streamlit */
-#         header {visibility: hidden;}
-#     </style>
-#     """,
-#     unsafe_allow_html=True
-# )
+# ── Fuente Global Inter para toda la app ────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── Títulos ─── */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+}
+
+/* ─── Texto de contenido ─── */
+p, li, td, th, a {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Markdown containers ─── */
+[data-testid="stMarkdownContainer"],
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] a {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Métricas ─── */
+[data-testid="stMetricValue"],
+[data-testid="stMetricLabel"],
+[data-testid="stMetricDelta"] {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Labels de widgets ─── */
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] span {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Inputs de texto ─── */
+input, textarea {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Tabs ─── */
+[data-baseweb="tab"] span,
+[data-baseweb="tab-list"] span {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Select / MultiSelect ─── */
+[data-testid="stSelectbox"] li,
+[data-testid="stMultiSelect"] li {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Sidebar: solo texto, sin tocar spans de íconos ─── */
+[data-testid="stSidebarContent"] p,
+[data-testid="stSidebarContent"] li,
+[data-testid="stSidebarContent"] a,
+[data-testid="stSidebarContent"] [data-testid="stMarkdownContainer"] p {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Texto de navegación lateral ─── */
+[data-testid="stSidebarNavLinkText"] {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── DataFrames ─── */
+[data-testid="stTable"] td,
+[data-testid="stTable"] th {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Expanders ─── */
+[data-testid="stExpander"] summary p {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Alerts / notificaciones ─── */
+[data-testid="stAlert"] p,
+[data-testid="stNotification"] p {
+    font-family: 'Inter', sans-serif !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 
 require_login()
 

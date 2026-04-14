@@ -6,6 +6,7 @@ import traceback
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from services.efectividad_utils import render_efectividad
 
 st.set_page_config(
     page_title="Gastos Generales",
@@ -286,7 +287,20 @@ st.plotly_chart(fig_real_gastos, width='stretch')
 with st.expander("Tabla de seguimiento"):
     st.write(seguimiento_real_gastos)
 
-
-
+# ═══════════════════════════════════════════════════════════════════════════
+#  EFECTIVIDAD DE AUTORIZACIONES — Gastos Generales
+# ═══════════════════════════════════════════════════════════════════════════
+render_efectividad(
+    df_auth=df2,
+    df_real=df3,
+    auth_rubro_col='Rubro Presupuestal',
+    auth_valor_col='Valor',
+    real_rubro_col='Cod Rubro Pptal',
+    real_valor_col='SALDO MOV.',
+    auth_fecha_col='Fecha',
+    real_fecha_col='Fecha',
+    section_name="Gastos Generales",
+    emoji="💸"
+)
 
 

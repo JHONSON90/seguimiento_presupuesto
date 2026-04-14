@@ -131,7 +131,7 @@ with col_chart1:
         margin=dict(t=20, b=20, l=0, r=0),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
-    st.plotly_chart(fig_tendencia, use_container_width=True)
+    st.plotly_chart(fig_tendencia, width='stretch')
 
 with col_chart2:
     st.subheader("📊 Utilidad Neta Mensual")
@@ -139,7 +139,7 @@ with col_chart2:
     fig_util = px.bar(df_resumen, x='Mes_Nom', y='Utilidad', text_auto='.2s')
     fig_util.update_traces(marker_color=colors, marker_line_color='rgb(8,48,107)', marker_line_width=1.5)
     fig_util.update_layout(height=400, margin=dict(t=20, b=20, l=20, r=20))
-    st.plotly_chart(fig_util, use_container_width=True)
+    st.plotly_chart(fig_util, width='stretch')
 
 st.markdown("---")
 
@@ -152,7 +152,7 @@ with col_bottom1:
         fig_pie = px.pie(df_rubros, values='Monto', names='Cod Rubro Pptal', hole=0.5,
                          color_discrete_sequence=px.colors.qualitative.Pastel)
         fig_pie.update_layout(height=400, margin=dict(t=0, b=0, l=0, r=0))
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, width='stretch')
     else:
         st.info("No se encontró desglose por rubros en los gastos.")
 
@@ -169,7 +169,7 @@ with col_bottom2:
         fill='tozeroy', fillcolor='rgba(26, 115, 232, 0.1)'
     ))
     fig_margen.update_layout(height=400, margin=dict(t=20, b=20, l=0, r=0))
-    st.plotly_chart(fig_margen, use_container_width=True)
+    st.plotly_chart(fig_margen, width='stretch')
 
 st.markdown("---")
 
@@ -187,5 +187,5 @@ with st.expander("Expandir Tabla de Rentabilidad"):
             "Margen": st.column_config.NumberColumn("Margen %", format="%.1f%%"),
         },
         hide_index=True,
-        use_container_width=True
+        width='stretch'
     )

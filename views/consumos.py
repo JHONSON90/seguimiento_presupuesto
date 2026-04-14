@@ -6,6 +6,7 @@ import pandas as pd
 import polars as pl
 import plotly.express as px
 import plotly.graph_objects as go
+from services.efectividad_utils import render_efectividad
 
 st.set_page_config(
     page_title="Consumos por Bodega",
@@ -187,3 +188,19 @@ with st.expander("Seguimiento con Compras"):
 #st.write(df)
 
 st.divider()
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  EFECTIVIDAD DE AUTORIZACIONES — Consumos por Bodega
+# ═══════════════════════════════════════════════════════════════════════════
+render_efectividad(
+    df_auth=df2,
+    df_real=df3,
+    auth_rubro_col='Rubro Presupuestal',
+    auth_valor_col='Valor',
+    real_rubro_col='RUBRO',
+    real_valor_col='Valor',
+    auth_fecha_col='Fecha',
+    real_fecha_col='FECHA',
+    section_name="Consumos por Bodega",
+    emoji="📦"
+)
