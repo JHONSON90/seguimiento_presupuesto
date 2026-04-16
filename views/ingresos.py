@@ -284,6 +284,65 @@ else:
 
 st.markdown("---")
 
+# ANALISIS POR CUENTA CONTABLE
+
+st.subheader("📊 Análisis por Cuenta Contable")
+
+# Agrupar por cuenta contable
+df_cuenta_summary = df_filtered.groupby(['Cuenta', 'Descripcion']).agg({
+    'Ppto_Mensual': 'sum',
+    'Saldo_Real': 'sum'
+}).reset_index()
+
+# Calcular cumplimiento por cuenta
+df_cuenta_summary['Cumplimiento'] = (df_cuenta_summary['Saldo_Real'] / df_cuenta_summary['Ppto_Mensual'].replace(0, pd.NA)) * 100
+df_cuenta_summary['Cumplimiento'] = df_cuenta_summary['Cumplimiento'].fillna(0).round(1)
+
+# Filtrar cuentas con saldo real mayor a 0
+df_cuenta_summary = df_cuenta_summary[df_cuenta_summary['Saldo_Real'] > 0]
+df_cuenta_summary_fig = df_cuenta_summary.sort_values('Saldo_Real', ascending=False).head(20)
+
+if not df_cuenta_summary.empty:
+    # Gráfico de barras por cuenta contable
+    fig_cc = go.Figure()
+    fig_cc.add_trace(go.Bar(
+        y=df_cuenta_summary_fig['Descripcion'],
+        x=df_cuenta_summary_fig['Ppto_Mensual'],
+        name='Presupuesto',
+        orientation='h',
+        marker_color='#bdc3c7'
+    ))
+    fig_cc.add_trace(go.Bar(
+        y=df_cuenta_summary_fig['Descripcion'],
+        x=df_cuenta_summary_fig['Saldo_Real'],
+        name='Real',
+        orientation='h',
+        marker_color='#27ae60'
+    ))
+    fig_cc.update_layout(
+        barmode='group',
+        height=max(400, len(df_cuenta_summary_fig) * 40),
+        margin=dict(t=20, b=20, l=0, r=0),
+        yaxis={'categoryorder':'total ascending'}
+    )
+    st.plotly_chart(fig_cc, width='stretch')
+    
+    # Tabla de detalle por cuenta
+    with st.expander("Detalle por Cuenta Contable"):
+        st.dataframe(
+            df_cuenta_summary.sort_values('Cumplimiento', ascending=False),
+            column_config={
+                "Ppto_Mensual": st.column_config.NumberColumn("Ppto Mensual", format="$%d"),
+                "Saldo_Real": st.column_config.NumberColumn("Saldo Real", format="$%d"),
+                "Cumplimiento": st.column_config.ProgressColumn("% Cumplimiento", format="%.1f%%", min_value=0, max_value=200),
+            },
+            hide_index=True,
+            width='stretch'
+        )
+else:
+    st.info("No se registraron ingresos por cuenta contable en este periodo.")
+
+st.markdown("---")
 # ── TABLA DE DETALLE ─────────────────────────────────────────────────────────
 st.subheader("📄 Detalle de Facturación y Presupuesto")
 with st.expander("Expandir Tabla Detallada"):

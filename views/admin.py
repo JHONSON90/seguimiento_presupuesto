@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from streamlit_gsheets import GSheetsConnection
 
 st.markdown("# Gestión de la aplicación")
@@ -269,8 +270,6 @@ with st.expander("💲 Agregar Ingresos"):
                 with st.spinner("Procesando y guardando datos..."):
                     try:
                         unidades_funcionales = pd.DataFrame({'Cod_Uf': [4105,4110,4115,4120,4125,4130,4135], 'Nom Uni Funcio':['Urgencias', 'Consulta Externa', 'Hospitalizacion', 'Quirofano',  'Apoyo Diagnostico', 'Apoyo Terapeutico', 'Mercadeo']})
-
-
                         ingresos_control = pd.read_excel(ruta, skiprows=6)
                         ingresos_control.columns = ingresos_control.columns.str.strip()
                         ingresos_control = ingresos_control[['FECHA', 'CUENTA', 'NIT', 'NOMBRE','DEBITOS', 'CREDITOS']]
@@ -278,11 +277,13 @@ with st.expander("💲 Agregar Ingresos"):
                         ingresos_control['CREDITOS'] = pd.to_numeric(ingresos_control['CREDITOS'], errors='coerce').fillna(0).astype(int)
                         ingresos_control['DEBITOS'] = pd.to_numeric(ingresos_control['DEBITOS'], errors='coerce').fillna(0).astype(int)
                         ingresos_control['Saldo'] = ingresos_control['CREDITOS'] - ingresos_control['DEBITOS']
+                        ingresos_control["Clasificacion"] = ingresos_control["CUENTA"].str[:2]
+                        ingresos_control["Clasificacion"] = np.where(ingresos_control["Clasificacion"] == "41", "Operacionales", "No Operacionales")
                         ingresos_control['Unidad Funcional'] = ingresos_control['CUENTA'].str[:4].astype(int)
-                        ingresos_control = ingresos_control[ingresos_control['Unidad Funcional'] != 4135]
+                        #ingresos_control = ingresos_control[ingresos_control['Unidad Funcional'] != 4135]
                         ingresos_control['Unidad Funcional'] = pd.to_numeric(ingresos_control['Unidad Funcional'], errors='coerce').fillna(0).astype(int)
                         ingresos_control = ingresos_control.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left')
-                        ingresos_control = ingresos_control[['FECHA', 'CUENTA', 'NIT', 'NOMBRE', 'DEBITOS', 'CREDITOS', 'Saldo','Unidad Funcional', 'Nom Uni Funcio']]
+                        ingresos_control = ingresos_control[['FECHA', 'CUENTA', 'NIT', 'NOMBRE', 'DEBITOS', 'CREDITOS', 'Saldo','Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion']]
 
                         #actualizar en base de datos
                         ingresos_reales = conn.read(worksheet="Control_Ingresos", ttl=0)
