@@ -207,10 +207,17 @@ def render_efectividad(df_auth, df_real,
     df_a[auth_valor_col] = pd.to_numeric(df_a[auth_valor_col], errors='coerce').fillna(0)
     df_r[real_valor_col] = pd.to_numeric(df_r[real_valor_col], errors='coerce').fillna(0)
 
+    MESES_ES = {
+        'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo',
+        'April': 'Abril', 'May': 'Mayo', 'June': 'Junio',
+        'July': 'Julio', 'August': 'Agosto', 'September': 'Septiembre',
+        'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'
+    }
+
     df_a['_mes'] = df_a[auth_fecha_col].dt.month
-    df_a['_mes_nombre'] = df_a[auth_fecha_col].dt.month_name()
+    df_a['_mes_nombre'] = df_a[auth_fecha_col].dt.month_name().map(MESES_ES)
     df_r['_mes'] = df_r[real_fecha_col].dt.month
-    df_r['_mes_nombre'] = df_r[real_fecha_col].dt.month_name()
+    df_r['_mes_nombre'] = df_r[real_fecha_col].dt.month_name().map(MESES_ES)
 
     # ── Aggregate by Rubro ──────────────────────────────────────────
     auth_by_rubro = df_a.groupby(auth_rubro_col)[auth_valor_col].sum().reset_index()

@@ -97,8 +97,15 @@ with col2:
 
 st.markdown("# Gastos")
 
+MESES_ES = {
+    'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo',
+    'April': 'Abril', 'May': 'Mayo', 'June': 'Junio',
+    'July': 'Julio', 'August': 'Agosto', 'September': 'Septiembre',
+    'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'
+}
+
 df2['Fecha'] = pd.to_datetime(df2['Fecha'])
-df2['Mes'] = df2['Fecha'].dt.month_name()
+df2['Mes'] = df2['Fecha'].dt.month_name().map(MESES_ES)
 df2['Valor'] = df2['Valor'].astype(int)
 seguimiento = df2.pivot_table(
     index='Rubro Presupuestal',
@@ -108,7 +115,7 @@ seguimiento = df2.pivot_table(
 )
 
 df3['Fecha'] = pd.to_datetime(df3['Fecha'])
-df3['Mes'] = df3['Fecha'].dt.month_name()
+df3['Mes'] = df3['Fecha'].dt.month_name().map(MESES_ES)
 df3['SALDO MOV.'] = df3['SALDO MOV.'].astype(int)
 
 real_ejecutado = df3.pivot_table(
@@ -239,7 +246,7 @@ fig_total_real.update_layout(
 st.plotly_chart(fig_total_real, width='stretch')
 
 df3['Fecha'] = pd.to_datetime(df3['Fecha'])
-df3['Mes'] = df3['Fecha'].dt.month_name()
+df3['Mes'] = df3['Fecha'].dt.month_name().map(MESES_ES)
 df3['SALDO MOV.'] = df3['SALDO MOV.'].astype(int)
 
 seguimiento_contabilidad = df3.pivot_table(

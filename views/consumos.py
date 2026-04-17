@@ -94,8 +94,15 @@ with col2:
 
 st.markdown("# Consumos autorizados por bodega")
 
+MESES_ES = {
+    'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo',
+    'April': 'Abril', 'May': 'Mayo', 'June': 'Junio',
+    'July': 'Julio', 'August': 'Agosto', 'September': 'Septiembre',
+    'October': 'Octubre', 'November': 'Noviembre', 'December': 'Diciembre'
+}
+
 df2['Fecha'] = pd.to_datetime(df2['Fecha'])
-df2['Mes'] = df2['Fecha'].dt.month_name()
+df2['Mes'] = df2['Fecha'].dt.month_name().map(MESES_ES)
 seguimiento = df2.pivot_table(
     index='Rubro Presupuestal',
     columns='Mes',
@@ -123,7 +130,7 @@ with data4:
 #region compras
 
 df3['FECHA'] = pd.to_datetime(df3['FECHA'])
-df3['Mes'] = df3['FECHA'].dt.month_name()
+df3['Mes'] = df3['FECHA'].dt.month_name().map(MESES_ES)
 df3['N_Mes'] = df3['FECHA'].dt.month
 
 para_grafico_compras = df3.groupby(['RUBRO', 'N_Mes', 'Mes']).agg({
