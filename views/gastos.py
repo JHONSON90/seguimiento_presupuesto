@@ -83,9 +83,14 @@ def agregar_consumo():
         st.rerun()
 
 
-@st.dialog("📋 Solicitudes de compra", width="medium")
+@st.dialog("📋 Solicitudes de compra", width="large")
 def listado_solicitudes():
-    st.write(df2)
+    try:
+        df_listado = conn.read(worksheet="Control GG", ttl=0)
+    except Exception as e:
+        st.error(f"Error al conectar con Google Sheets: {str(e)}")
+        st.error(f"Traceback: {traceback.format_exc()}")
+    st.dataframe(df_listado, use_container_width=True)
 
 col1, col2 = st.columns(2)
 with col1:
