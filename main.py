@@ -195,7 +195,7 @@ gastos = st.Page(
 
 presupuesto_total = st.Page(
     'views/ppto_total.py',
-    title = 'Gastos con Informe Consumos',
+    title = 'Gastos con Informe Costos',
     icon = '🧮'
 )
 
