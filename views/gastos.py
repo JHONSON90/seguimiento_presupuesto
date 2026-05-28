@@ -132,8 +132,12 @@ real_ejecutado = df3.pivot_table(
 
 ppto_consumos = df.merge(real_ejecutado, on='Cod Rubro Pptal', how='left').fillna(0)
 
+
 #TODO: colocar un estado en el control gg para que aqui me muestre solo los dos ultimos meses y meses anteriores colocar lo real ejecutado
-ppto_consumos = ppto_consumos.merge(seguimiento, right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
+cols_repetidas = ppto_consumos.columns.intersection(seguimiento.columns)
+st.write(cols_repetidas)
+
+ppto_consumos = ppto_consumos.merge(seguimiento.drop(columns=cols_repetidas), right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
 
 ppto_consumos['Valor 2026'] = ppto_consumos['Valor 2026'].astype(int)
 ppto_consumos['Valor mensual'] = ppto_consumos['Valor mensual'].astype(int)

@@ -4,6 +4,8 @@ from streamlit_gsheets import GSheetsConnection
 import plotly.express as px
 import plotly.graph_objects as go
 import traceback
+from services.users import get_role
+from services.pdf_report import generar_pdf, TRIMESTRES
 
 # ── BOTÓN FLOTANTE — Análisis profundo ────────────────────────────────────────
 st.markdown("""
@@ -530,3 +532,67 @@ with st.expander("📄 Ver Tabla de Datos Completa"):
         hide_index=True,
         width = 'stretch'
     )
+
+# # ─────────────────────────────────────────────────────────────────────────────
+# # SECCIÓN 7: INFORME PDF TRIMESTRAL (solo administradores)
+# # ─────────────────────────────────────────────────────────────────────────────
+# _role = get_role()
+# if _role == "admin":
+#     st.markdown("---")
+#     st.subheader("📄 Informe PDF Trimestral")
+#     st.markdown(
+#         "Genera y descarga un informe ejecutivo en PDF con el análisis completo "
+#         "de **presupuesto vs ejecución** para el trimestre seleccionado: "
+#         "métricas, tendencia mensual, áreas que excedieron y rubros sobre presupuesto."
+#     )
+
+#     # Selector de trimestre
+#     trimestre_opciones = list(TRIMESTRES.keys())
+#     col_trim, col_btn = st.columns([2, 1])
+#     with col_trim:
+#         trimestre_sel = st.selectbox(
+#             "📆 Selecciona el trimestre",
+#             trimestre_opciones,
+#             key="pdf_trimestre"
+#         )
+
+#     # Vista previa de métricas del trimestre elegido
+#     meses_sel = TRIMESTRES[trimestre_sel]
+#     df_trim_prev = df_final[df_final["Mes"].isin(meses_sel)]
+#     ppto_t = df_trim_prev["Presupuesto"].sum()
+#     ejec_t = df_trim_prev["Ejecutado"].sum()
+#     dif_t  = ppto_t - ejec_t
+#     pct_t  = (ejec_t / ppto_t * 100) if ppto_t > 0 else 0
+
+#     p1, p2, p3, p4 = st.columns(4)
+#     p1.metric("💰 Presupuesto Trimestre", f"${ppto_t:,.0f}")
+#     p2.metric("💳 Ejecutado Trimestre",   f"${ejec_t:,.0f}", f"{pct_t:.1f}%", delta_color="inverse")
+#     p3.metric("📉 Saldo",                f"${dif_t:,.0f}")
+#     p4.metric("📈 % Ejecución",          f"{pct_t:.1f}%")
+
+#     st.caption(
+#         "ℹ️ El PDF incluye: resumen ejecutivo · tendencia mensual con gráfico · "
+#         "áreas sobre presupuesto · rubros sobre presupuesto · heatmap CC×Rubro · detalle completo."
+#     )
+
+#     # Generación y descarga
+#     with col_btn:
+#         st.write("")   # espaciado vertical para alinear con el selectbox
+#         st.write("")
+#         if st.button("⚙️ Generar PDF", key="btn_generar_pdf", type="secondary"):
+#             with st.spinner("Generando informe PDF... esto puede tardar unos segundos."):
+#                 try:
+#                     pdf_bytes = generar_pdf(df_final, trimestre_sel)
+#                     nombre_archivo = f"Informe_Presupuestal_{trimestre_sel[:2]}_2026.pdf"
+#                     st.download_button(
+#                         label="📥 Descargar PDF",
+#                         data=pdf_bytes,
+#                         file_name=nombre_archivo,
+#                         mime="application/pdf",
+#                         key="download_pdf_btn",
+#                         type="primary"
+#                     )
+#                     st.success("✅ PDF generado correctamente. Haz clic en **Descargar PDF** para guardarlo.")
+#                 except Exception as e:
+#                     st.error(f"❌ Error al generar el PDF: {str(e)}")
+#                     st.error(traceback.format_exc())
