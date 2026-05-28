@@ -135,7 +135,6 @@ ppto_consumos = df.merge(real_ejecutado, on='Cod Rubro Pptal', how='left').filln
 
 #TODO: colocar un estado en el control gg para que aqui me muestre solo los dos ultimos meses y meses anteriores colocar lo real ejecutado
 cols_repetidas = ppto_consumos.columns.intersection(seguimiento.columns)
-st.write(cols_repetidas)
 
 ppto_consumos = ppto_consumos.merge(seguimiento.drop(columns=cols_repetidas), right_on='Rubro Presupuestal', left_on='Cod Rubro Pptal', how='left').fillna(0)
 
