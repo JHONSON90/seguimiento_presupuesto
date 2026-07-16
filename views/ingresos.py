@@ -354,7 +354,7 @@ with st.expander("Expandir Tabla Detallada"):
         column_config={
             "Ppto_Anual": st.column_config.NumberColumn("Valor Presupuestado Año", format="$%d"),
             "Ppto_Mensual": st.column_config.NumberColumn("Ppto Mensual", format="$%d"),
-            "Saldo_Real": st.column_config.NumberColumn("Saldo Real", format="$%d"),
+            "Saldo_Real": st.column_config.NumberColumn("Total Periodo", format="$%d"),
             "Diferencia": st.column_config.NumberColumn("Diferencia", format="$%d"),
             "Cumplimiento": st.column_config.ProgressColumn("% Cumplimiento", format="%.1f%%", min_value=0, max_value=200),
         },
