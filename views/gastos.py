@@ -264,7 +264,23 @@ seguimiento_contabilidad = df3.pivot_table(
     aggfunc='sum'
 )
 
+# Asegurar conversión de tipos en claves de cruce y valores numéricos
+df['Cod Rubro Pptal'] = df['Cod Rubro Pptal'].astype(str).str.strip()
+df3['Cod Rubro Pptal'] = df3['Cod Rubro Pptal'].astype(str).str.strip()
+df['Valor 2026'] = pd.to_numeric(df['Valor 2026'], errors='coerce').fillna(0)
+df['Valor mensual'] = pd.to_numeric(df['Valor mensual'], errors='coerce').fillna(0)
+
+# Calcular Saldo Real a partir de la ejecución (df3)
+real_total = df3.groupby('Cod Rubro Pptal')['SALDO MOV.'].sum().reset_index()
+real_total.columns = ['Cod Rubro Pptal', 'Saldo_Real']
+
 seguimiento_real_gastos = df.merge(seguimiento_contabilidad, on='Cod Rubro Pptal', how='left').fillna(0)
+seguimiento_real_gastos = seguimiento_real_gastos.merge(real_total, on='Cod Rubro Pptal', how='left').fillna(0)
+
+# Calcular cumplimiento y diferencia manejando divisiones por cero
+seguimiento_real_gastos['Cumplimiento'] = (seguimiento_real_gastos['Saldo_Real'] / seguimiento_real_gastos['Valor 2026'].replace(0, pd.NA)) * 100
+seguimiento_real_gastos['Cumplimiento'] = pd.to_numeric(seguimiento_real_gastos['Cumplimiento'], errors='coerce').fillna(0).astype(float)
+seguimiento_real_gastos['Diferencia'] = seguimiento_real_gastos['Saldo_Real'] - seguimiento_real_gastos['Valor 2026']
 
 fig_real_gastos = px.area(df3,
     x='Mes',
@@ -300,7 +316,27 @@ fig_real_gastos.update_layout(
 st.plotly_chart(fig_real_gastos, width='stretch')
 
 with st.expander("Tabla de seguimiento"):
-    st.write(seguimiento_real_gastos)
+    df_display = seguimiento_real_gastos.copy()
+    df_display['Cumplimiento'] = df_display['Cumplimiento'].clip(0, 200)
+    meses_presentes = [m for m in MESES_ES.values() if m in df_display.columns]
+    
+    col_config = {
+        "Cod Rubro Pptal": st.column_config.TextColumn("Cod Rubro Pptal"),
+        "Valor 2026": st.column_config.NumberColumn("Valor Presupuestado Año", format="$%d"),
+        "Valor mensual": st.column_config.NumberColumn("Ppto Mensual", format="$%d"),
+        "Saldo_Real": st.column_config.NumberColumn("Saldo Real", format="$%d"),
+        "Diferencia": st.column_config.NumberColumn("Diferencia", format="$%d"),
+        "Cumplimiento": st.column_config.ProgressColumn("% Cumplimiento", format="%.1f%%", min_value=0, max_value=200),
+    }
+    for m in meses_presentes:
+        col_config[m] = st.column_config.NumberColumn(m, format="$%d")
+        
+    st.dataframe(
+        df_display.sort_values(['Cod Rubro Pptal']),
+        column_config=col_config,
+        hide_index=True,
+        width='stretch'
+    )
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  EFECTIVIDAD DE AUTORIZACIONES — Gastos Generales

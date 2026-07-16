@@ -157,7 +157,23 @@ para_grafico_compras = para_grafico_compras.merge(sin_index, right_on='Rubro Pre
 para_grafico_compras = para_grafico_compras.drop(columns=['index', 'Rubro Presupuestal'])
 #st.write(para_grafico_compras)
 st.divider()
+# Asegurar conversión de tipos en claves de cruce y valores numéricos
+sin_index['Rubro Presupuestal'] = sin_index['Rubro Presupuestal'].astype(str).str.strip()
+df3['RUBRO'] = df3['RUBRO'].astype(str).str.strip()
+sin_index['Valor Año'] = pd.to_numeric(sin_index['Valor Año'], errors='coerce').fillna(0)
+sin_index['Valor Mensual'] = pd.to_numeric(sin_index['Valor Mensual'], errors='coerce').fillna(0)
+
+# Calcular Saldo Real a partir del total de compras (df3)
+real_total_compras = df3.groupby('RUBRO')['Valor'].sum().reset_index()
+real_total_compras.columns = ['Rubro Presupuestal', 'Saldo_Real']
+
 seguimiento_compras_unido = sin_index.merge(seguimiento_compras, right_on='RUBRO', left_on='Rubro Presupuestal', how='left').fillna(0)
+seguimiento_compras_unido = seguimiento_compras_unido.merge(real_total_compras, on='Rubro Presupuestal', how='left').fillna(0)
+
+# Calcular cumplimiento y diferencia manejando divisiones por cero
+seguimiento_compras_unido['Cumplimiento'] = (seguimiento_compras_unido['Saldo_Real'] / seguimiento_compras_unido['Valor Año'].replace(0, pd.NA)) * 100
+seguimiento_compras_unido['Cumplimiento'] = pd.to_numeric(seguimiento_compras_unido['Cumplimiento'], errors='coerce').fillna(0).astype(float)
+seguimiento_compras_unido['Diferencia'] = seguimiento_compras_unido['Saldo_Real'] - seguimiento_compras_unido['Valor Año']
 
 st.markdown("# Seguimiento con Compras")
 
@@ -192,11 +208,32 @@ if not para_grafico_compras.empty:
 
     st.plotly_chart(fig_compras)
 
-seguimiento_compras_unido.drop(columns=['index', 'Valor Año'], inplace=True)
+if 'index' in seguimiento_compras_unido.columns:
+    seguimiento_compras_unido.drop(columns=['index'], inplace=True)
 
 
 with st.expander("Seguimiento con Compras"):
-    st.write(seguimiento_compras_unido)
+    df_display = seguimiento_compras_unido.copy()
+    df_display['Cumplimiento'] = df_display['Cumplimiento'].clip(0, 200)
+    meses_presentes = [m for m in MESES_ES.values() if m in df_display.columns]
+    
+    col_config = {
+        "Rubro Presupuestal": st.column_config.TextColumn("Rubro Presupuestal"),
+        "Valor Año": st.column_config.NumberColumn("Valor Presupuestado Año", format="$%d"),
+        "Valor Mensual": st.column_config.NumberColumn("Ppto Mensual", format="$%d"),
+        "Saldo_Real": st.column_config.NumberColumn("Saldo Real", format="$%d"),
+        "Diferencia": st.column_config.NumberColumn("Diferencia", format="$%d"),
+        "Cumplimiento": st.column_config.ProgressColumn("% Cumplimiento", format="%.1f%%", min_value=0, max_value=200),
+    }
+    for m in meses_presentes:
+        col_config[m] = st.column_config.NumberColumn(m, format="$%d")
+        
+    st.dataframe(
+        df_display.sort_values(['Rubro Presupuestal']),
+        column_config=col_config,
+        hide_index=True,
+        width='stretch'
+    )
 #st.write(df)
 
 st.divider()

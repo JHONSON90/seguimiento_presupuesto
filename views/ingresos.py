@@ -346,11 +346,13 @@ st.markdown("---")
 # ── TABLA DE DETALLE ─────────────────────────────────────────────────────────
 st.subheader("📄 Detalle de Facturación y Presupuesto")
 with st.expander("Expandir Tabla Detallada"):
-    df_display = df_filtered[['UF_Nombre', 'Tipo', 'Cuenta', 'Mes_Nom', 'Ppto_Mensual', 'Saldo_Real', 'Diferencia', 'Cumplimiento']].copy()
+    df_display = df_filtered[['UF_Nombre', 'Tipo', 'Cuenta', 'Mes_Nom', 'Ppto_Anual', 'Ppto_Mensual', 'Saldo_Real', 'Diferencia', 'Cumplimiento']].copy()
+    df_display['Cumplimiento'] = pd.to_numeric(df_display['Cumplimiento'], errors='coerce').fillna(0).astype(float).clip(0, 200)
     
     st.dataframe(
         df_display.sort_values(['UF_Nombre', 'Mes_Nom']),
         column_config={
+            "Ppto_Anual": st.column_config.NumberColumn("Valor Presupuestado Año", format="$%d"),
             "Ppto_Mensual": st.column_config.NumberColumn("Ppto Mensual", format="$%d"),
             "Saldo_Real": st.column_config.NumberColumn("Saldo Real", format="$%d"),
             "Diferencia": st.column_config.NumberColumn("Diferencia", format="$%d"),
