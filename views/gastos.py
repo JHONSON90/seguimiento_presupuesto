@@ -282,14 +282,18 @@ seguimiento_real_gastos['Cumplimiento'] = (seguimiento_real_gastos['Saldo_Real']
 seguimiento_real_gastos['Cumplimiento'] = pd.to_numeric(seguimiento_real_gastos['Cumplimiento'], errors='coerce').fillna(0).astype(float)
 seguimiento_real_gastos['Diferencia'] = seguimiento_real_gastos['Saldo_Real'] - seguimiento_real_gastos['Valor 2026']
 
+df3['Acumulado'] = df3.groupby('Cod Rubro Pptal')['SALDO MOV.'].cumsum()
+
 fig_real_gastos = px.area(df3,
     x='Mes',
-    y='SALDO MOV.',
+    y='Acumulado',
     color='Cod Rubro Pptal',
     facet_col='Cod Rubro Pptal',
     facet_col_wrap=3,
     height=900
     )
+
+
 
 fig_real_gastos.update_layout(
     showlegend=False
