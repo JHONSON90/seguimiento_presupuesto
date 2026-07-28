@@ -200,6 +200,7 @@ with st.expander("☁️ Agregar Compras a la app"):
 
 
 with st.expander("✨Agregar Informe de costos"):
+    st.info("Recuerda que el archivo debe ser el informe mensual que esta dentro de la carpeta de cada mes")
     with st.form("form_costos"):
         fecha_informe = st.date_input('🗓️ Fecha del informe')
         ruta = st.file_uploader("Selecciona el archivo Excel", type=["xlsx"])
