@@ -60,8 +60,8 @@ except Exception as e:
     st.error(f"Error cargando la base de datos de usuarios: {e}")
 
 
-with st.expander("📎 Agregar movimiento cuentas general a la app"):
-    st.info("Recuerda que el archivo debe estar como lo arroja Siigo")
+with st.expander("📎 Agregar movimiento gastos a la app"):
+    st.info("Recuerda que el archivo debe ser el de movimiento general de las cuentas 5 y 6 (hasta 6130), con una sola hoja (Informe o Hoja1), quitado subtotales, y debes seleccionar la fecha preferiblemente el ultimo dia del mes a subir")
     
     with st.form("form_libro_diario"):
         fecha_libro = st.date_input('🗓️ Fecha del libro diario')
@@ -107,7 +107,7 @@ with st.expander("📎 Agregar movimiento cuentas general a la app"):
                 st.warning("⚠️ Por favor, selecciona un archivo Excel primero antes de guardar.")
 
 with st.expander("☁️ Agregar Compras a la app"):
-    
+    st.info("Recuerda que el archivo debe ser el de movimiento general de todas las P, con una sola hoja (Informe o Hoja1), quitado subtotales")
     # Mapeo de Rubros Presupuestales (Extraído para facilitar mantenimiento)
     RUBROS_DATOS = {
         'para_cruce': [
@@ -143,7 +143,7 @@ with st.expander("☁️ Agregar Compras a la app"):
                 with st.spinner("Procesando y guardando datos..."):
                     try:
                         # 1. Carga y limpieza inicial
-                        df_compras = pd.read_excel(ruta, skiprows=6, sheet_name="Hoja1 (2)")
+                        df_compras = pd.read_excel(ruta, skiprows=6)
                         df_compras.columns = df_compras.columns.str.strip()
                         
                         # 2. Filtrado por cuenta (solo las que comienzan con 14)
@@ -282,8 +282,12 @@ with st.expander("💲 Agregar Ingresos"):
                         ingresos_control['Unidad Funcional'] = ingresos_control['CUENTA'].str[:4].astype(int)
                         #ingresos_control = ingresos_control[ingresos_control['Unidad Funcional'] != 4135]
                         ingresos_control['Unidad Funcional'] = pd.to_numeric(ingresos_control['Unidad Funcional'], errors='coerce').fillna(0).astype(int)
-                        ingresos_control = ingresos_control.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left')
-                        ingresos_control = ingresos_control[['FECHA', 'CUENTA', 'NIT', 'NOMBRE', 'DEBITOS', 'CREDITOS', 'Saldo','Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion']]
+                        ingresos_control = ingresos_control.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left').fillna('No Operacionales')
+                        ingresos_control = ingresos_control.groupby(['FECHA', 'CUENTA', 'NIT', 'NOMBRE','Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion']).agg({
+                            'DEBITOS': 'sum',
+                            'CREDITOS': 'sum',
+                            'Saldo': 'sum'
+                        }).reset_index()
 
                         #actualizar en base de datos
                         ingresos_reales = conn.read(worksheet="Control_Ingresos", ttl=0)
