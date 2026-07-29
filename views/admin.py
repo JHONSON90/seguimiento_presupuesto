@@ -284,11 +284,35 @@ with st.expander("💲 Agregar Ingresos"):
                         #ingresos_control = ingresos_control[ingresos_control['Unidad Funcional'] != 4135]
                         ingresos_control['Unidad Funcional'] = pd.to_numeric(ingresos_control['Unidad Funcional'], errors='coerce').fillna(0).astype(int)
                         ingresos_control = ingresos_control.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left').fillna('No Operacionales')
+                        
+                        capita = ingresos_control[(ingresos_control['CUENTA'] == '4110102702') & (ingresos_control['Saldo'] > 10000000)]
+                        VALOR_DISTRIBUIR = capita.Saldo.sum()
+                        PARA_DISTRIBUIR = pd.DataFrame({
+                            'CUENTA': ['4125100210','4125100310','4110102702','4110103402','4110105402','4110102102','4110102602','4110102802','4110104202','4110104502','4130100102','4130100602','4110103302','4110104402','4130100302','4130100202','4130100802'],
+                            'PORCENTAJE' : [0.124253168191507,0.0962459071985921,0.0498630419036186,0.0848546175503838,0.0990476477229005,0.151408256325752,0.133136616877349,0.0647937080489093,0.0336932464173509,0.018565378801987,0.00636601721334622,0.0111461695143457,0.0305430041391138,0.0611776432816374,0.00824929420446009,0.0131886359182637,0.013467646690482]
+
+                        })
+                        PARA_DISTRIBUIR['Saldo'] = PARA_DISTRIBUIR['PORCENTAJE'] * VALOR_DISTRIBUIR
+                        PARA_DISTRIBUIR.Saldo = PARA_DISTRIBUIR.Saldo.astype(int)
+                        PARA_DISTRIBUIR['FECHA'] = ingresos_control.FECHA.max()
+                        PARA_DISTRIBUIR['NIT'] = 830053105
+                        PARA_DISTRIBUIR['NOMBRE'] = 'FIDEICOMISOS PATRIMONIOS AUTONOMOS FIDUCIARIA LA PREVISORA SA'
+                        PARA_DISTRIBUIR['Unidad Funcional'] = PARA_DISTRIBUIR['CUENTA'].str[:4].astype(int)
+                        PARA_DISTRIBUIR = PARA_DISTRIBUIR.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left')
+                        PARA_DISTRIBUIR['Clasificacion'] = 'Operacionales'
+                        PARA_DISTRIBUIR['DEBITOS'] = 0
+                        PARA_DISTRIBUIR['CREDITOS'] = 0
+                        PARA_DISTRIBUIR = PARA_DISTRIBUIR[['FECHA', 'CUENTA', 'NIT', 'NOMBRE', 'Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion', 'DEBITOS', 'CREDITOS', 'Saldo']]
+
+                        ingresos_control = ingresos_control[~((ingresos_control['CUENTA'] == '4110102702') & (ingresos_control['Saldo'] > 10000000))]
+                        
                         ingresos_control = ingresos_control.groupby(['FECHA', 'CUENTA', 'NIT', 'NOMBRE','Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion']).agg({
                             'DEBITOS': 'sum',
                             'CREDITOS': 'sum',
                             'Saldo': 'sum'
                         }).reset_index()
+
+                        ingresos_control = pd.concat([ingresos_control, PARA_DISTRIBUIR], ignore_index=True)
 
                         #actualizar en base de datos
                         ingresos_reales = conn.read(worksheet="Control_Ingresos", ttl=0)
