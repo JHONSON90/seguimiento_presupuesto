@@ -21,7 +21,7 @@ try:
             
             # Configurar el editor de datos
             edited_df = st.data_editor(
-                df_users,
+                df_users.reset_index(drop=True),
                 num_rows="dynamic", # Permite añadir y eliminar filas
                 width='stretch',
                 column_config={
@@ -29,7 +29,7 @@ try:
                         "Correo Electrónico",
                         help="Email corporativo o cuenta de Google",
                         required=True,
-                        validate="^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+                        validate=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
                     ),
                     "Rol": st.column_config.SelectboxColumn(
                         "Rol de Acceso",
@@ -284,16 +284,50 @@ with st.expander("💲 Agregar Ingresos"):
                         #ingresos_control = ingresos_control[ingresos_control['Unidad Funcional'] != 4135]
                         ingresos_control['Unidad Funcional'] = pd.to_numeric(ingresos_control['Unidad Funcional'], errors='coerce').fillna(0).astype(int)
                         ingresos_control = ingresos_control.merge(unidades_funcionales, left_on='Unidad Funcional', right_on='Cod_Uf', how='left').fillna('No Operacionales')
+                        capita = ingresos_control[(ingresos_control['CUENTA'] == '4110102702') & (ingresos_control['Saldo'] > 10000000)].copy()
+                        capita['Saldo'] = capita['Saldo'].astype(int)
+                        ingresos_control = ingresos_control[~((ingresos_control['CUENTA'] == '4110102702') & (ingresos_control['Saldo'] > 10000000))].copy()
                         
-                        capita = ingresos_control[(ingresos_control['CUENTA'] == '4110102702') & (ingresos_control['Saldo'] > 10000000)]
-                        VALOR_DISTRIBUIR = capita.Saldo.sum()
+                        capita_pasto = capita[capita['Saldo'] == 708483105]
+                        VALOR_DISTRIBUIR_PASTO = capita_pasto['Saldo'].sum()
+
                         PARA_DISTRIBUIR = pd.DataFrame({
-                            'CUENTA': ['4125100210','4125100310','4110102702','4110103402','4110105402','4110102102','4110102602','4110102802','4110104202','4110104502','4130100102','4130100602','4110103302','4110104402','4130100302','4130100202','4130100802', '4105100102'],
-                            'PORCENTAJE' : [0.124253168191507,0.0962459071985921,0.0498630419036186,0.0848546175503838,0.0990476477229005,0.151408256325752,0.133136616877349,0.0647937080489093,0.0336932464173509,0.018565378801987,0.00636601721334622,0.0111461695143457,0.0305430041391138,0.0611776432816374,0.00824929420446009,0.0131886359182637,0.013467646690482, 0.00276352887952787]
+                            'CUENTA': ['4110102102','4110102602','4110102802','4110104202','4110104502','4125100210','4125100310','4110102702','4110103402','4110105402','4130100102','4130100602','4110103302','4110104402','4130100302','4130100202','4130100802','4105100102'],
+                            'PORCENTAJE' : [0.14340369,0.12609803,0.06136823,0.03191197,0.02682271,0.11686657,0.09448170,0.04603923,0.08003397,0.09576707,0.01042157,0.01824697,0.02892827,0.05794334,0.01350461,0.02159062,0.02204738,0.00452407]
 
                         })
-                        PARA_DISTRIBUIR['Saldo'] = PARA_DISTRIBUIR['PORCENTAJE'] * VALOR_DISTRIBUIR
-                        PARA_DISTRIBUIR.Saldo = PARA_DISTRIBUIR.Saldo.astype(int)
+                        PARA_DISTRIBUIR['Saldo'] = PARA_DISTRIBUIR['PORCENTAJE'] * VALOR_DISTRIBUIR_PASTO
+                        PARA_DISTRIBUIR['Saldo'] = PARA_DISTRIBUIR['Saldo'].astype(int)
+
+                        MPIOS = capita[capita['Saldo'] != 708483105].copy()
+
+                        # Define conditions and choices for updating 'CUENTA'
+                        conditions = [
+                            MPIOS['Saldo'] == 117071824, 
+                            MPIOS['Saldo'] == 178975236, 
+                            MPIOS['Saldo'] == 23426868, 
+                            MPIOS['Saldo'] == 35407920, 
+                            MPIOS['Saldo'] == 11116440, 
+                            MPIOS['Saldo'] == 24085620, 
+                            MPIOS['Saldo'] == 30261420, 
+                            MPIOS['Saldo'] == 16304112, 
+                            MPIOS['Saldo'] == 14698404
+                        ]
+                        choices = [
+                            '411010270202', 
+                            '411010270203', 
+                            '411010270204', 
+                            '411010270205', 
+                            '411010270206', 
+                            '411010270207', 
+                            '411010270208', 
+                            '411010270209', 
+                            '411010270209'
+                        ]
+
+                        # Apply the conditional update to the 'CUENTA' column
+                        MPIOS['CUENTA'] = np.select(conditions, choices, default=MPIOS['CUENTA'])        
+
                         PARA_DISTRIBUIR['FECHA'] = ingresos_control.FECHA.max()
                         PARA_DISTRIBUIR['NIT'] = 830053105
                         PARA_DISTRIBUIR['NOMBRE'] = 'FIDEICOMISOS PATRIMONIOS AUTONOMOS FIDUCIARIA LA PREVISORA SA'
@@ -304,7 +338,7 @@ with st.expander("💲 Agregar Ingresos"):
                         PARA_DISTRIBUIR['CREDITOS'] = 0
                         PARA_DISTRIBUIR = PARA_DISTRIBUIR[['FECHA', 'CUENTA', 'NIT', 'NOMBRE', 'Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion', 'DEBITOS', 'CREDITOS', 'Saldo']]
 
-                        ingresos_control = ingresos_control[~((ingresos_control['CUENTA'] == '4110102702') & (ingresos_control['Saldo'] > 10000000))]
+                        ingresos_control = pd.concat([ingresos_control, MPIOS])
                         
                         ingresos_control = ingresos_control.groupby(['FECHA', 'CUENTA', 'NIT', 'NOMBRE','Unidad Funcional', 'Nom Uni Funcio', 'Clasificacion']).agg({
                             'DEBITOS': 'sum',
@@ -313,9 +347,15 @@ with st.expander("💲 Agregar Ingresos"):
                         }).reset_index()
 
                         ingresos_control = pd.concat([ingresos_control, PARA_DISTRIBUIR], ignore_index=True)
+                        ingresos_control['NOMBRE'] = ingresos_control['NOMBRE'].str.strip()
 
                         #actualizar en base de datos
                         ingresos_reales = conn.read(worksheet="Control_Ingresos", ttl=0)
+                        
+                        # Limpiar filas/columnas completamente vacías antes del concat para evitar FutureWarning
+                        if not ingresos_reales.empty:
+                            ingresos_reales = ingresos_reales.dropna(how='all')
+                        
                         ingresos_unidos_reales = pd.concat([ingresos_reales, ingresos_control], ignore_index=True)
 
 
